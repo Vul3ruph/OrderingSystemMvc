@@ -1,0 +1,443 @@
+﻿/* Dashboard Layout 專用樣式 - ASP.NET Core 版本 */
+/* 使用 !important 確保覆蓋 Bootstrap 樣式 */
+
+:root {
+    --primary-color: #2563eb;
+    --secondary-color: #3b82f6;
+    --success-color: #059669;
+    --warning-color: #d97706;
+    --danger-color: #dc2626;
+    --dark-color: #1f2937;
+    --sidebar-bg: #1e293b;
+    --sidebar-active: #334155;
+    --content-bg: #f8fafc;
+    --border-color: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #64748b;
+    --text-light: #94a3b8;
+}
+
+/* 重置基礎樣式 */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    background: var(--content-bg) !important;
+    min-height: 100vh;
+    color: var(--text-primary) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* 側邊欄樣式 - 強制覆蓋 Bootstrap */
+.admin-sidebar {
+    width: 280px !important;
+    height: 100vh !important;
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    background: var(--sidebar-bg) !important;
+    border-right: 1px solid #334155 !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.1) !important;
+    z-index: 1000 !important;
+    overflow: hidden !important;
+}
+
+    .admin-sidebar.collapsed {
+        width: 80px !important;
+    }
+
+/* 側邊欄標題區域 */
+.sidebar-header {
+    padding: 1.5rem !important;
+    border-bottom: 1px solid #334155 !important;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+    color: white !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    height: auto !important;
+    min-height: 80px !important;
+}
+
+.logo-icon {
+    font-size: 1.5rem !important;
+    min-width: 40px !important;
+    text-align: center !important;
+    color: white !important;
+}
+
+.logo-text {
+    font-size: 1.25rem !important;
+    font-weight: 700 !important;
+    transition: opacity 0.3s ease !important;
+    color: white !important;
+    white-space: nowrap !important;
+}
+
+.admin-sidebar.collapsed .logo-text {
+    opacity: 0 !important;
+    display: none !important;
+}
+
+.sidebar-toggle {
+    background: none !important;
+    border: none !important;
+    color: white !important;
+    font-size: 1.2rem !important;
+    cursor: pointer !important;
+    margin-left: auto !important;
+    padding: 0.5rem !important;
+    border-radius: 0.5rem !important;
+    transition: background-color 0.2s ease !important;
+}
+
+    .sidebar-toggle:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+    }
+
+/* 導航選單 */
+.nav-menu {
+    padding: 1.5rem 0 !important;
+    height: calc(100vh - 100px) !important;
+    overflow-y: auto !important;
+    background: transparent !important;
+}
+
+.nav-item {
+    margin: 0.25rem 1rem !important;
+    list-style: none !important;
+}
+
+/* 覆蓋 Bootstrap 的 nav-link 樣式 */
+.admin-sidebar .nav-link {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    padding: 0.875rem 1rem !important;
+    color: #cbd5e1 !important;
+    text-decoration: none !important;
+    border-radius: 0.75rem !important;
+    transition: all 0.2s ease !important;
+    font-weight: 500 !important;
+    position: relative !important;
+    border: none !important;
+    background: transparent !important;
+    width: 100% !important;
+    text-align: left !important;
+}
+
+    .admin-sidebar .nav-link:hover {
+        background: var(--sidebar-active) !important;
+        color: white !important;
+        transform: translateX(4px) !important;
+        text-decoration: none !important;
+    }
+
+    .admin-sidebar .nav-link.active {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+        color: white !important;
+        box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3) !important;
+        text-decoration: none !important;
+    }
+
+    .admin-sidebar .nav-link i {
+        width: 20px !important;
+        text-align: center !important;
+        min-width: 20px !important;
+        font-size: 1.1rem !important;
+    }
+
+.nav-text {
+    transition: opacity 0.3s ease !important;
+    white-space: nowrap !important;
+}
+
+.admin-sidebar.collapsed .nav-text {
+    opacity: 0 !important;
+    display: none !important;
+}
+
+/* 分隔線樣式 */
+.nav-separator,
+.admin-sidebar hr {
+    margin: 1rem !important;
+    border: none !important;
+    height: 1px !important;
+    background: #334155 !important;
+    border-color: #334155 !important;
+}
+
+/* 主要內容區域 */
+.admin-main {
+    margin-left: 280px !important;
+    min-height: 100vh !important;
+    padding: 2rem !important;
+    transition: margin-left 0.3s ease !important;
+    background: var(--content-bg) !important;
+}
+
+.admin-sidebar.collapsed + .admin-main {
+    margin-left: 80px !important;
+}
+
+/* 頂部標題欄 */
+.admin-header {
+    background: white !important;
+    border-radius: 1rem !important;
+    padding: 1rem 1.5rem !important;
+    margin-bottom: 2rem !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+.page-title {
+    font-size: 1.875rem !important;
+    font-weight: 700 !important;
+    color: var(--text-primary) !important;
+    margin: 0 !important;
+}
+
+.header-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+}
+
+.user-info {
+    display: flex !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    color: var(--text-secondary) !important;
+    font-weight: 500 !important;
+}
+
+.user-avatar {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: white !important;
+    font-weight: 600 !important;
+    font-size: 1.1rem !important;
+}
+
+.notification-bell {
+    position: relative !important;
+    background: none !important;
+    border: none !important;
+    font-size: 1.2rem !important;
+    color: var(--text-secondary) !important;
+    cursor: pointer !important;
+    padding: 0.5rem !important;
+    border-radius: 0.5rem !important;
+    transition: all 0.2s ease !important;
+}
+
+    .notification-bell:hover {
+        background: var(--content-bg) !important;
+        color: var(--primary-color) !important;
+    }
+
+.notification-badge {
+    position: absolute !important;
+    top: 2px !important;
+    right: 2px !important;
+    width: 8px !important;
+    height: 8px !important;
+    background: var(--danger-color) !important;
+    border-radius: 50% !important;
+}
+
+/* 內容區域 */
+.admin-content {
+    background: white !important;
+    border-radius: 1rem !important;
+    min-height: calc(100vh - 200px) !important;
+    padding: 2rem !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid var(--border-color) !important;
+}
+
+/* 麵包屑導航 - 覆蓋 Bootstrap breadcrumb */
+.breadcrumb-nav {
+    margin-bottom: 1.5rem !important;
+}
+
+.breadcrumb {
+    background: white !important;
+    border-radius: 0.75rem !important;
+    padding: 0.75rem 1rem !important;
+    margin: 0 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid var(--border-color) !important;
+    list-style: none !important;
+}
+
+.breadcrumb-item {
+    display: inline-block !important;
+}
+
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: "/" !important;
+        padding: 0 0.5rem !important;
+        color: var(--text-light) !important;
+    }
+
+    .breadcrumb-item a {
+        color: var(--primary-color) !important;
+        text-decoration: none !important;
+        font-weight: 500 !important;
+    }
+
+        .breadcrumb-item a:hover {
+            color: var(--secondary-color) !important;
+        }
+
+    .breadcrumb-item.active {
+        color: var(--text-secondary) !important;
+    }
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    .admin-sidebar {
+        transform: translateX(-100%) !important;
+    }
+
+        .admin-sidebar.mobile-open {
+            transform: translateX(0) !important;
+        }
+
+    .admin-main {
+        margin-left: 0 !important;
+        padding: 1rem !important;
+    }
+
+    .mobile-overlay {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: rgba(0, 0, 0, 0.5) !important;
+        z-index: 999 !important;
+        display: none !important;
+    }
+
+        .mobile-overlay.active {
+            display: block !important;
+        }
+
+    .mobile-menu-btn {
+        display: block !important;
+        background: none !important;
+        border: none !important;
+        font-size: 1.2rem !important;
+        color: var(--text-primary) !important;
+        cursor: pointer !important;
+        padding: 0.5rem !important;
+        border-radius: 0.5rem !important;
+        transition: background-color 0.2s ease !important;
+    }
+
+        .mobile-menu-btn:hover {
+            background: var(--content-bg) !important;
+        }
+}
+
+@media (min-width: 769px) {
+    .mobile-menu-btn {
+        display: none !important;
+    }
+}
+
+/* 載入動畫 */
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slide-in-left {
+    animation: slideInLeft 0.6s ease forwards !important;
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.6s ease forwards !important;
+}
+
+/* 額外的視覺改善 */
+.admin-sidebar .nav-link::before {
+    content: '' !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 3px !important;
+    height: 0 !important;
+    background: var(--primary-color) !important;
+    border-radius: 0 2px 2px 0 !important;
+    transition: height 0.2s ease !important;
+}
+
+.admin-sidebar .nav-link.active::before {
+    height: 60% !important;
+}
+
+/* 滾動條樣式 */
+.nav-menu::-webkit-scrollbar {
+    width: 4px !important;
+}
+
+.nav-menu::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+.nav-menu::-webkit-scrollbar-thumb {
+    background: #475569 !important;
+    border-radius: 2px !important;
+}
+
+    .nav-menu::-webkit-scrollbar-thumb:hover {
+        background: #64748b !important;
+    }
+
+/* 確保 Bootstrap 的 d-flex 等工具類正常工作 */
+.d-flex {
+    display: flex !important;
+}
+
+.align-items-center {
+    align-items: center !important;
+}
+
+.justify-content-between {
+    justify-content: space-between !important;
+}

@@ -1,0 +1,208 @@
+﻿@model OrderingSystemMvc.Models.OptionItem
+
+@{
+    ViewData["Title"] = "刪除選項項目";
+    Layout = "_DashboardLayout";
+
+    // 設定麵包屑
+    ViewBag.BreadcrumbItems = new List<dynamic>
+    {
+        new { Title = "選項項目管理", Url = Url.Action("Index") },
+        new { Title = "刪除選項項目", Url = (string)null }
+    };
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <!-- 頁面標題 -->
+            <div class="d-flex align-items-center mb-4">
+                <a asp-action="Index" class="btn btn-outline-secondary me-3">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h2 class="text-dark mb-1">刪除選項項目</h2>
+                    <p class="text-muted mb-0">確認刪除「@Model.Name」</p>
+                </div>
+            </div>
+
+
+
+            <!-- 選項項目詳情 -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="mb-0 text-dark">
+                        <i class="fas fa-info-circle text-primary me-2"></i>
+                        選項項目詳情
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <!-- 基本資訊 -->
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold text-muted">項目名稱</label>
+                                <div class="p-3 bg-light rounded">
+                                    <h6 class="mb-0">@Model.Name</h6>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold text-muted">所屬選項群組</label>
+                                <div class="p-3 bg-light rounded">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">
+                                        @Model.Option?.Name
+                                    </span>
+                                </div>
+                            </div>
+
+                         
+                        </div>
+
+                        <div class="col-md-4">
+                            <!-- 價格與狀態 -->
+                            <div class="card bg-light border-0">
+                                <div class="card-body">
+                                    <h6 class="card-title text-dark mb-3">
+                                        <i class="fas fa-tags text-secondary me-2"></i>
+                                        詳細資訊
+                                    </h6>
+
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold text-muted small">額外價格</label>
+                                        <div>
+                                            @if (Model.ExtraPrice > 0)
+                                            {
+                                                <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3 py-2 fs-6">
+                                                    +$@Model.ExtraPrice
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 fs-6">
+                                                    免費
+                                                </span>
+                                            }
+                                        </div>
+                                    </div>
+
+                                  
+                                
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+               
+                </div>
+            </div>
+
+
+            <!-- 確認刪除表單 -->
+            <div class="card border-danger shadow-sm">
+                <div class="card-body">
+                    <form asp-action="Delete" method="post" id="deleteForm">
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                                <label class="form-check-label fw-semibold" for="confirmDelete">
+                                    我確認要刪除此選項項目，並了解此操作無法復原
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>取消
+                            </a>
+                            <div>
+                                <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-primary me-2">
+                                    <i class="fas fa-edit me-2"></i>改為編輯
+                                </a>
+                                <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>
+                                    <i class="fas fa-trash me-2"></i>確認刪除
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const confirmCheckbox = document.getElementById('confirmDelete');
+            const deleteBtn = document.getElementById('deleteBtn');
+            const deleteForm = document.getElementById('deleteForm');
+            const checkingSpinner = document.getElementById('checkingSpinner');
+            const usageStatus = document.getElementById('usageStatus');
+            const usageDetails = document.getElementById('usageDetails');
+
+            // 確認勾選框控制刪除按鈕
+            confirmCheckbox.addEventListener('change', function() {
+                deleteBtn.disabled = !this.checked;
+            });
+
+    
+            // 表單提交確認
+            deleteForm.addEventListener('submit', function(e) {
+                if (!confirmCheckbox.checked) {
+                    e.preventDefault();
+                    alert('請先勾選確認刪除的選項');
+                    return;
+                }
+
+                if (!confirm('最後確認：您真的要刪除「@Model.Name」這個選項項目嗎？\n\n此操作無法復原！')) {
+                    e.preventDefault();
+                    return;
+                }
+
+                // 顯示載入狀態
+                deleteBtn.disabled = true;
+                deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>刪除中...';
+            });
+
+            // 鍵盤快捷鍵
+            document.addEventListener('keydown', function(e) {
+                // ESC 鍵返回列表
+                if (e.key === 'Escape') {
+                    window.location.href = '@Url.Action("Index")';
+                }
+            });
+        });
+    </script>
+}
+
+<style>
+    .border-dashed {
+        border-style: dashed !important;
+    }
+
+    .option-icon {
+        transition: all 0.3s ease;
+    }
+
+    .card-danger {
+        border-color: #dc3545;
+    }
+
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .form-check-input:checked {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+
+    .btn-danger:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+</style>

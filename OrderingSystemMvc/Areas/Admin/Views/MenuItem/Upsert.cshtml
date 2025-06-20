@@ -1,0 +1,547 @@
+﻿@model MenuItem
+@{
+    var isCreate = Model.Id == 0;
+    ViewData["Title"] = isCreate ? "新增餐點" : "編輯餐點";
+}
+
+<!-- 頁面標題區域 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="page-title mb-1">
+            <i class="fas @(isCreate ? "fa-plus" : "fa-edit") me-2"></i>@ViewData["Title"]
+        </h2>
+        <p class="text-muted mb-0">@(isCreate ? "建立新的餐點項目" : "修改餐點資訊")</p>
+    </div>
+    <div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-2"></i>返回列表
+        </a>
+    </div>
+</div>
+
+<!-- 顯示成功/錯誤訊息 -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>@TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>@TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<form asp-action="Upsert" enctype="multipart/form-data" id="menuItemForm">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="ImageUrl" />
+
+
+    <div class="row">
+        <!-- 左側主要資訊 -->
+        <div class="col-lg-8">
+            <!-- 基本資訊卡片 -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>基本資訊
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="Name" class="form-label fw-bold">
+                                <i class="fas fa-utensils me-2"></i>餐點名稱 <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="Name" class="form-control form-control-lg" placeholder="請輸入餐點名稱" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-12 mb-3">
+                            <label asp-for="Description" class="form-label fw-bold">
+                                <i class="fas fa-align-left me-2"></i>餐點描述
+                            </label>
+                            <textarea asp-for="Description" class="form-control" rows="4"
+                                      placeholder="請輸入餐點描述，例如：食材、口味特色等"></textarea>
+                            <span asp-validation-for="Description" class="text-danger small"></span>
+                            <div class="form-text">建議詳細描述餐點特色，有助於顧客了解</div>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Price" class="form-label fw-bold">
+                                <i class="fas fa-dollar-sign me-2"></i>價格 <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">NT$</span>
+                                <input asp-for="Price" class="form-control" placeholder="0" step="0.01" />
+                            </div>
+                            <span asp-validation-for="Price" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="SortOrder" class="form-label fw-bold">
+                                <i class="fas fa-sort-numeric-down me-2"></i>排序順序
+                            </label>
+                            <input asp-for="SortOrder" class="form-control" placeholder="數字越小排序越前面" />
+                            <span asp-validation-for="SortOrder" class="text-danger small"></span>
+                            <div class="form-text">數字越小，餐點顯示順序越前面</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 圖片上傳卡片 -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-image me-2"></i>餐點圖片
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">上傳新圖片</label>
+                        <input type="file" name="formFile" class="form-control" accept="image/*" id="imageUpload" />
+                        <div class="form-text">支援 JPG, PNG, GIF 格式，建議尺寸 800x600px，檔案大小不超過 5MB</div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <div class="mb-3" id="currentImageContainer">
+                            <label class="form-label fw-bold">目前圖片</label>
+                            <div class="position-relative d-inline-block">
+                                <img src="@Model.ImageUrl" class="img-thumbnail rounded"
+                                     style="max-height: 200px; max-width: 300px;" id="currentImage" />
+                                <div class="position-absolute top-0 end-0">
+                                    <button type="button" class="btn btn-danger btn-sm rounded-circle"
+                                            onclick="removeCurrentImage()" title="移除圖片">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- 圖片預覽區域 -->
+                    <div id="imagePreview" class="d-none">
+                        <label class="form-label fw-bold">圖片預覽</label>
+                        <div class="position-relative d-inline-block">
+                            <img id="previewImg" class="img-thumbnail rounded" style="max-height: 200px; max-width: 300px;" />
+                            <div class="position-absolute top-0 end-0">
+                                <button type="button" class="btn btn-danger btn-sm rounded-circle"
+                                        onclick="clearImagePreview()" title="取消上傳">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側設定區域 -->
+        <div class="col-lg-4">
+            <!-- 分類設定卡片 -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-tags me-2"></i>分類設定
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="CategoryId" class="form-label fw-bold">
+                            餐點分類 <span class="text-danger">*</span>
+                        </label>
+                        <select asp-for="CategoryId" class="form-select">
+                            <option value="">請選擇分類</option>
+                            @if (ViewBag.Categories != null)
+                            {
+                                @foreach (var category in ViewBag.Categories as List<Category>)
+                                {
+                                    <option value="@category.Id" selected="@(category.Id == Model.CategoryId)">
+                                        @category.Name
+                                    </option>
+                                }
+                            }
+                        </select>
+                        <span asp-validation-for="CategoryId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="d-grid">
+                        <a asp-area="Admin" asp-controller="Category" asp-action="Index"
+                           class="btn btn-outline-primary btn-sm" target="_blank">
+                            <i class="fas fa-plus me-2"></i>管理分類
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 狀態設定卡片 -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-toggle-on me-2"></i>狀態設定
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" asp-for="IsAvailable" id="isAvailableSwitch">
+                        <label class="form-check-label fw-bold" for="isAvailableSwitch">
+                            餐點可用狀態
+                        </label>
+                        <div class="form-text">關閉後顧客將無法看到此餐點</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 操作按鈕卡片 -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg" id="submitBtn">
+                            <i class="fas fa-save me-2"></i>@(isCreate ? "建立餐點" : "儲存變更")
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>取消
+                        </a>
+                        @if (!isCreate)
+                        {
+                            <hr class="my-3">
+
+                            <!-- 最簡單可靠的刪除方式：使用表單 -->
+                            <form asp-area="Admin" asp-controller="MenuItem" asp-action="Delete" method="post"
+                                  onsubmit="return confirm('確定要刪除「@Model.Name」嗎？此操作無法復原！');"
+                                  style="display: inline-block; width: 100%;">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@Model.Id" />
+                                <button type="submit" class="btn btn-sm btn-danger w-100">
+                                    <i class="fas fa-trash me-2"></i>刪除餐點
+                                </button>
+                            </form>
+                      
+                        }
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <!-- 確保載入必要的庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('頁面載入完成');
+
+            // 檢查庫是否載入
+            console.log('jQuery 載入:', typeof $ !== 'undefined');
+            console.log('SweetAlert2 載入:', typeof Swal !== 'undefined');
+
+            // 刪除按鈕事件綁定
+            const deleteBtn = document.getElementById('deleteBtn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', function(e) {
+                    e.preventDefault(); // 防止任何默認行為
+                    e.stopPropagation(); // 停止事件冒泡
+
+                    console.log('刪除按鈕被點擊');
+                    confirmDelete(@Model.Id, '@Html.Raw(Model.Name?.Replace("'", "\\'"))');
+                });
+            }
+
+            // 圖片上傳預覽
+            const imageUpload = document.getElementById('imageUpload');
+            const imagePreview = document.getElementById('imagePreview');
+            const previewImg = document.getElementById('previewImg');
+
+            if (imageUpload) {
+                imageUpload.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file) {
+                        // 檢查檔案大小 (5MB)
+                        if (file.size > 5 * 1024 * 1024) {
+                            alert('檔案大小不能超過 5MB');
+                            e.target.value = '';
+                            return;
+                        }
+
+                        // 檢查檔案類型
+                        if (!file.type.match('image.*')) {
+                            alert('請選擇圖片檔案');
+                            e.target.value = '';
+                            return;
+                        }
+
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            previewImg.src = e.target.result;
+                            imagePreview.classList.remove('d-none');
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        clearImagePreview();
+                    }
+                });
+            }
+
+            // 表單驗證
+            const form = document.getElementById('menuItemForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    let isValid = true;
+                    const submitBtn = document.getElementById('submitBtn');
+
+                    // 檢查必填欄位
+                    const requiredFields = [
+                        { name: 'Name', label: '餐點名稱' },
+                        { name: 'Price', label: '價格' },
+                        { name: 'CategoryId', label: '分類' }
+                    ];
+
+                    requiredFields.forEach(field => {
+                        const input = document.querySelector(`[name="${field.name}"]`);
+                        if (input && !input.value.trim()) {
+                            isValid = false;
+                            input.classList.add('is-invalid');
+
+                            // 如果沒有錯誤訊息，添加一個
+                            let errorSpan = input.parentNode.querySelector('.text-danger');
+                            if (errorSpan && !errorSpan.textContent.trim()) {
+                                errorSpan.textContent = `${field.label}為必填欄位`;
+                            }
+                        } else if (input) {
+                            input.classList.remove('is-invalid');
+                            input.classList.add('is-valid');
+                        }
+                    });
+
+                    // 檢查價格是否為有效數字
+                    const priceInput = document.querySelector('[name="Price"]');
+                    if (priceInput && priceInput.value) {
+                        const price = parseFloat(priceInput.value);
+                        if (isNaN(price) || price < 0) {
+                            isValid = false;
+                            priceInput.classList.add('is-invalid');
+                            const errorSpan = priceInput.parentNode.parentNode.querySelector('.text-danger');
+                            if (errorSpan) errorSpan.textContent = '請輸入有效的價格';
+                        }
+                    }
+
+                    if (!isValid) {
+                        e.preventDefault();
+                        showNotification('請修正表單錯誤後重新提交', 'error');
+
+                        // 滾動到第一個錯誤欄位
+                        const firstError = document.querySelector('.is-invalid');
+                        if (firstError) {
+                            firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            firstError.focus();
+                        }
+                    } else {
+                        // 顯示載入狀態
+                        submitBtn.disabled = true;
+                        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>處理中...';
+                    }
+                });
+            }
+        });
+
+                function ajaxDelete(menuItemId, name) {
+            if (!confirm(`確定要刪除「${name}」嗎？此操作無法復原！`)) {
+                return;
+            }
+
+            console.log('開始 AJAX 刪除:', menuItemId);
+
+            // 取得 token
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            // 使用 Fetch API
+            const formData = new FormData();
+            formData.append('id', menuItemId);
+            formData.append('__RequestVerificationToken', token);
+
+            fetch('/Admin/MenuItem/Delete', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('回應狀態:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('回應數據:', data);
+                if (data.success) {
+                    alert('刪除成功');
+                    window.location.href = '/Admin/MenuItem';
+                } else {
+                    alert('刪除失敗: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('錯誤:', error);
+                alert('刪除失敗: ' + error.message);
+            });
+        }
+        // 刪除函數
+        function confirmDelete(menuItemId, name) {
+            console.log('confirmDelete 函數被呼叫:', menuItemId, name);
+
+            // 檢查 SweetAlert2 是否載入
+            if (typeof Swal === 'undefined') {
+                console.log('SweetAlert2 未載入，使用原生 confirm');
+                if (confirm(`確定要刪除「${name}」嗎？此操作無法復原！`)) {
+                    deleteMenuItem(menuItemId);
+                }
+                return;
+            }
+
+            Swal.fire({
+                title: `確定要刪除「${name}」嗎？`,
+                text: "此操作無法復原！",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '是的，刪除',
+                cancelButtonText: '取消',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    deleteMenuItem(menuItemId);
+                }
+            });
+        }
+
+        function deleteMenuItem(menuItemId) {
+            console.log('開始刪除餐點:', menuItemId);
+
+            // 取得 AntiForgeryToken
+            const token = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (!token) {
+                console.error('找不到 AntiForgeryToken');
+                alert('操作失敗：安全令牌遺失');
+                return;
+            }
+
+            // 使用 Fetch API (更可靠)
+            const formData = new FormData();
+            formData.append('id', menuItemId);
+            formData.append('__RequestVerificationToken', token.value);
+
+            console.log('發送刪除請求...');
+
+            fetch('/Admin/MenuItem/Delete', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('回應狀態:', response.status);
+                console.log('回應 OK:', response.ok);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                return response.json();
+            })
+            .then(res => {
+                console.log('刪除回應:', res);
+
+                if (res.success) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '刪除成功',
+                            text: res.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            window.location.href = '/Admin/MenuItem';
+                        });
+                    } else {
+                        alert('刪除成功');
+                        window.location.href = '/Admin/MenuItem';
+                    }
+                } else {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('無法刪除', res.message, 'error');
+                    } else {
+                        alert('無法刪除：' + res.message);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('刪除錯誤:', error);
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('錯誤', error.message, 'error');
+                } else {
+                    alert('錯誤：' + error.message);
+                }
+            });
+        }
+
+        function clearImagePreview() {
+            const imagePreview = document.getElementById('imagePreview');
+            const imageUpload = document.getElementById('imageUpload');
+
+            imagePreview.classList.add('d-none');
+            imageUpload.value = '';
+        }
+
+        function removeCurrentImage() {
+            if (confirm('確定要移除目前的圖片嗎？')) {
+                const currentImageContainer = document.getElementById('currentImageContainer');
+                const imageUrlInput = document.querySelector('input[name="ImageUrl"]');
+
+                if (currentImageContainer) {
+                    currentImageContainer.remove();
+                }
+                if (imageUrlInput) {
+                    imageUrlInput.value = '';
+                }
+            }
+        }
+
+        function showNotification(message, type = 'success') {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+            alertDiv.style.top = '20px';
+            alertDiv.style.right = '20px';
+            alertDiv.style.zIndex = '1050';
+            alertDiv.style.minWidth = '300px';
+            alertDiv.innerHTML = `
+                <i class="fas ${icon} me-2"></i>${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.body.appendChild(alertDiv);
+
+            // 3秒後自動移除
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 3000);
+        }
+    </script>
+}

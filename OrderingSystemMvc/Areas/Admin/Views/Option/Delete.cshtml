@@ -1,0 +1,25 @@
+﻿@model OrderingSystemMvc.Models.Option
+
+@{
+    ViewData["Title"] = "刪除選項大類";
+}
+
+<div class="card shadow-sm p-4">
+    <h4 class="text-danger mb-4">⚠️ 確認刪除</h4>
+
+    <dl class="row">
+        <dt class="col-sm-3">名稱</dt>
+        <dd class="col-sm-9">@Model.Name</dd>
+
+        <dt class="col-sm-3">是否為單選</dt>
+        <dd class="col-sm-9">@((Model.IsSingleChoice) ? "是" : "否")</dd>
+    </dl>
+
+    <form asp-action="DeleteConfirmed" method="post" class="text-end mt-4">
+        <input type="hidden" asp-for="Id" />
+        <button type="submit" class="btn btn-danger">
+            <i class="fas fa-trash-alt"></i> 確認刪除
+        </button>
+        <a asp-action="Index" class="btn btn-secondary">取消</a>
+    </form>
+</div>

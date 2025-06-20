@@ -1,0 +1,568 @@
+﻿@model List<MenuItem>
+
+<!-- 頁面標題區域 -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="page-title mb-1">
+            <i class="fas fa-utensils me-2"></i>餐點列表
+        </h2>
+        <p class="text-muted mb-0">管理您的餐廳菜單項目</p>
+    </div>
+    <div>
+        <a asp-action="Upsert" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>新增餐點
+        </a>
+    </div>
+</div>
+
+<!-- 統計卡片 -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="bg-primary bg-opacity-10 rounded p-3">
+                            <i class="fas fa-utensils text-primary"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="fw-bold text-dark">@Model.Count</div>
+                        <div class="text-muted small">總餐點數</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="bg-success bg-opacity-10 rounded p-3">
+                            <i class="fas fa-check-circle text-success"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="fw-bold text-dark">@Model.Count(x => x.IsAvailable)</div>
+                        <div class="text-muted small">可用餐點</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="bg-warning bg-opacity-10 rounded p-3">
+                            <i class="fas fa-pause-circle text-warning"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="fw-bold text-dark">@Model.Count(x => !x.IsAvailable)</div>
+                        <div class="text-muted small">停售餐點</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="bg-info bg-opacity-10 rounded p-3">
+                            <i class="fas fa-tags text-info"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <div class="fw-bold text-dark">@Model.Select(x => x.CategoryId).Distinct().Count()</div>
+                        <div class="text-muted small">分類數量</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 篩選工具列 -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">搜尋餐點</label>
+                <div class="input-group">
+                    <span class="input-group-text">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" class="form-control" placeholder="輸入餐點名稱..." id="searchInput">
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">分類篩選</label>
+                <select class="form-select" id="categoryFilter">
+                    <option value="">所有分類</option>
+                    @foreach (var category in Model.Select(x => x.Category).Distinct().Where(x => x != null))
+                    {
+                        <option value="@category.Id">@category.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">狀態篩選</label>
+                <select class="form-select" id="statusFilter">
+                    <option value="">所有狀態</option>
+                    <option value="available">可用</option>
+                    <option value="unavailable">停售</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-grid">
+                    <button type="button" class="btn btn-outline-secondary" onclick="clearFilters()">
+                        <i class="fas fa-times me-1"></i>清除
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 餐點列表 -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom">
+        <div class="d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="fas fa-list me-2"></i>餐點清單
+            </h5>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary btn-sm" onclick="toggleView('grid')">
+                    <i class="fas fa-th"></i>
+                </button>
+                <button class="btn btn-primary btn-sm" onclick="toggleView('table')">
+                    <i class="fas fa-list"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="menuItemTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-image me-2"></i>餐點
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-tags me-2"></i>分類
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-dollar-sign me-2"></i>價格
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-sort-numeric-down me-2"></i>排序
+                                </div>
+                            </th>
+                            <th>
+                                <div class="d-flex align-items-center">
+                                    <i class="fas fa-toggle-on me-2"></i>狀態
+                                </div>
+                            </th>
+                            <th class="text-center pe-4">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.OrderBy(x => x.SortOrder))
+                        {
+                            <tr class="menu-item-row" data-category="@item.CategoryId" data-status="@(item.IsAvailable ? "available" : "unavailable")">
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="flex-shrink-0 me-3">
+                                            @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                            {
+                                                <img src="@item.ImageUrl" alt="@item.Name" class="rounded" style="width: 50px; height: 50px; object-fit: cover;">
+                                            }
+                                            else
+                                            {
+                                                <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                                    <i class="fas fa-utensils text-muted"></i>
+                                                </div>
+                                            }
+                                        </div>
+                                        <div class="flex-grow-1">
+                                            <div class="fw-bold text-dark menu-item-name">@item.Name</div>
+                                            @if (!string.IsNullOrEmpty(item.Description))
+                                            {
+                                                <div class="text-muted small">@item.Description</div>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (item.Category != null)
+                                    {
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="fas fa-tag me-1"></i>@item.Category.Name
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">未分類</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-success">NT$ @item.Price.ToString("N0")</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">@item.SortOrder</span>
+                                </td>
+                                <td>
+                                    @if (item.IsAvailable)
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check me-1"></i>可用
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning">
+                                            <i class="fas fa-pause me-1"></i>停售
+                                        </span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <!-- 編輯按鈕 -->
+                                        <a asp-action="Upsert" asp-route-id="@item.Id"
+                                           class="btn btn-outline-primary" title="編輯">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+
+
+                                        <!-- 刪除按鈕 - 修復版本 -->
+                                        <button type="button" class="btn btn-outline-danger"
+                                                onclick="confirmDelete(@item.Id, '@Html.Raw(item.Name?.Replace("'", "\\'"))')"
+                                                title="刪除">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 無搜尋結果提示 -->
+            <div id="noResultsMessage" class="text-center py-5" style="display: none;">
+                <div class="mb-3">
+                    <i class="fas fa-search fa-3x text-muted"></i>
+                </div>
+                <h5 class="text-muted">找不到符合條件的餐點</h5>
+                <p class="text-muted mb-4">請嘗試調整篩選條件</p>
+                <button type="button" class="btn btn-outline-primary" onclick="clearFilters()">
+                    <i class="fas fa-times me-2"></i>清除篩選
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <div class="mb-3">
+                    <i class="fas fa-utensils fa-3x text-muted"></i>
+                </div>
+                <h5 class="text-muted">尚無餐點資料</h5>
+                <p class="text-muted mb-4">開始新增您的第一個餐點吧！</p>
+                <a asp-action="Upsert" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>新增餐點
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        // 篩選功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const categoryFilter = document.getElementById('categoryFilter');
+            const statusFilter = document.getElementById('statusFilter');
+
+            // 綁定事件監聽器
+            searchInput.addEventListener('input', applyFilters);
+            categoryFilter.addEventListener('change', applyFilters);
+            statusFilter.addEventListener('change', applyFilters);
+        });
+
+        function applyFilters() {
+            const searchValue = document.getElementById('searchInput').value.toLowerCase().trim();
+            const categoryValue = document.getElementById('categoryFilter').value;
+            const statusValue = document.getElementById('statusFilter').value;
+
+            const rows = document.querySelectorAll('.menu-item-row');
+            let visibleCount = 0;
+
+            rows.forEach(function(row) {
+                let visible = true;
+
+                // 搜尋餐點名稱
+                if (searchValue) {
+                    const nameElement = row.querySelector('.menu-item-name');
+                    const name = nameElement ? nameElement.textContent.toLowerCase() : '';
+                    if (!name.includes(searchValue)) {
+                        visible = false;
+                    }
+                }
+
+                // 分類篩選
+                if (categoryValue) {
+                    const rowCategory = row.getAttribute('data-category');
+                    if (rowCategory !== categoryValue) {
+                        visible = false;
+                    }
+                }
+
+                // 狀態篩選
+                if (statusValue) {
+                    const rowStatus = row.getAttribute('data-status');
+                    if (rowStatus !== statusValue) {
+                        visible = false;
+                    }
+                }
+
+                // 顯示或隱藏行
+                if (visible) {
+                    row.style.display = '';
+                    visibleCount++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            // 顯示或隱藏無結果消息
+            const noResultsMessage = document.getElementById('noResultsMessage');
+            const tableContainer = document.querySelector('.table-responsive');
+
+            if (visibleCount === 0 && rows.length > 0) {
+                if (tableContainer) tableContainer.style.display = 'none';
+                if (noResultsMessage) noResultsMessage.style.display = 'block';
+            } else {
+                if (tableContainer) tableContainer.style.display = 'block';
+                if (noResultsMessage) noResultsMessage.style.display = 'none';
+            }
+        }
+
+        // 清除篩選
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('categoryFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            applyFilters();
+        }
+
+        // 視圖切換功能（預留）
+        function toggleView(viewType) {
+            // 這裡可以實現網格視圖和表格視圖的切換
+            console.log('切換視圖:', viewType);
+        }
+
+        // 刪除功能
+        function confirmDelete(menuItemId, name) {
+            console.log('確認刪除:', menuItemId, name);
+
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: `確定要刪除「${name}」嗎？`,
+                    text: "此操作無法復原！",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '是的，刪除',
+                    cancelButtonText: '取消'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        deleteMenuItem(menuItemId, name);
+                    }
+                });
+            } else {
+                if (confirm(`確定要刪除「${name}」嗎？此操作無法復原！`)) {
+                    deleteMenuItem(menuItemId, name);
+                }
+            }
+        }
+
+        function deleteMenuItem(menuItemId, name) {
+            console.log('開始刪除:', menuItemId);
+
+            // 取得 AntiForgeryToken
+            const token = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (!token) {
+                // 如果頁面沒有 token，創建一個隱藏表單來取得
+                createDeleteForm(menuItemId);
+                return;
+            }
+
+            // 使用 Fetch API 發送 POST 請求
+            const formData = new FormData();
+            formData.append('id', menuItemId);
+            formData.append('__RequestVerificationToken', token.value);
+
+            fetch('/Admin/MenuItem/Delete', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                console.log('回應狀態:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                return response.json();
+            })
+            .then(data => {
+                console.log('刪除回應:', data);
+
+                if (data.success) {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: '刪除成功',
+                            text: data.message,
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        alert('刪除成功');
+                        location.reload();
+                    }
+                } else {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire('無法刪除', data.message, 'error');
+                    } else {
+                        alert('無法刪除: ' + data.message);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('刪除錯誤:', error);
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire('錯誤', error.message, 'error');
+                } else {
+                    alert('錯誤: ' + error.message);
+                }
+            });
+        }
+
+        // 備用方案：創建隱藏表單提交
+        function createDeleteForm(menuItemId) {
+            console.log('使用表單方式刪除:', menuItemId);
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/Admin/MenuItem/Delete';
+
+            // 創建 ID 輸入
+            const idInput = document.createElement('input');
+            idInput.type = 'hidden';
+            idInput.name = 'id';
+            idInput.value = menuItemId;
+
+            // 取得或創建 AntiForgeryToken
+            let tokenInput;
+            const existingToken = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (existingToken) {
+                tokenInput = existingToken.cloneNode();
+            } else {
+                // 如果沒有現有的 token，創建一個（這種情況下可能需要從服務器取得）
+                tokenInput = document.createElement('input');
+                tokenInput.type = 'hidden';
+                tokenInput.name = '__RequestVerificationToken';
+                tokenInput.value = 'TEMP'; // 這會失敗，但至少會顯示錯誤
+            }
+
+            form.appendChild(idInput);
+            form.appendChild(tokenInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        // 複製功能
+        function duplicateItem(menuItemId) {
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/Admin/MenuItem/Duplicate';
+
+            const idInput = document.createElement('input');
+            idInput.type = 'hidden';
+            idInput.name = 'id';
+            idInput.value = menuItemId;
+
+            const token = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (token) {
+                const tokenInput = token.cloneNode();
+                form.appendChild(tokenInput);
+            }
+
+            form.appendChild(idInput);
+            document.body.appendChild(form);
+            form.submit();
+        }
+
+        // 狀態切換功能
+        function toggleStatus(menuItemId, currentStatus) {
+            const formData = new FormData();
+            formData.append('id', menuItemId);
+
+            const token = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (token) {
+                formData.append('__RequestVerificationToken', token.value);
+            }
+
+            fetch('/Admin/MenuItem/ToggleStatus', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('狀態更新失敗: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('狀態切換錯誤:', error);
+                alert('狀態更新失敗');
+            });
+        }
+    </script>
+}
+
+<!-- 確保頁面有 AntiForgeryToken -->
+@if (!ViewContext.HttpContext.Request.Headers.ContainsKey("X-Requested-With"))
+{
+    <!-- 在頁面某處添加隱藏的 token -->
+    <form style="display: none;">
+        @Html.AntiForgeryToken()
+    </form>
+}

@@ -1,0 +1,33 @@
+﻿@model OrderingSystemMvc.Models.Option
+
+@{
+    ViewData["Title"] = "新增選項大類";
+}
+
+<div class="card shadow-sm p-4">
+    <h4 class="mb-4">新增選項大類</h4>
+
+    <form asp-action="Create" method="post">
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label">名稱</label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="form-check mb-3">
+            <input asp-for="IsSingleChoice" class="form-check-input" />
+            <label asp-for="IsSingleChoice" class="form-check-label">是否為單選</label>
+        </div>
+
+        <div class="text-end">
+            <button type="submit" class="btn btn-success">
+                <i class="fas fa-save"></i> 儲存
+            </button>
+            <a asp-action="Index" class="btn btn-secondary">取消</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

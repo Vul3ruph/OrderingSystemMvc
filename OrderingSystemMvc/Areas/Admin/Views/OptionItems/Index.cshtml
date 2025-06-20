@@ -1,0 +1,346 @@
+﻿@model IEnumerable<OrderingSystemMvc.Models.OptionItem>
+
+@{
+    ViewData["Title"] = "選項項目管理";
+    Layout = "_DashboardLayout";
+
+    // 設定麵包屑
+    ViewBag.BreadcrumbItems = new List<dynamic>
+    {
+        new { Title = "選項項目管理", Url = (string)null }
+    };
+}
+
+<div class="container-fluid">
+    <!-- 頁面標題與操作按鈕 -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="text-dark mb-1">選項項目管理</h2>
+            <p class="text-muted mb-0">管理餐點的各種選項項目（如：小份、大份、加料等）</p>
+        </div>
+        <div>
+            <a asp-action="Create" class="btn btn-primary btn-lg">
+                <i class="fas fa-plus me-2"></i>新增選項項目
+            </a>
+        </div>
+    </div>
+
+    <!-- 統計卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-primary bg-opacity-10 p-3">
+                                <i class="fas fa-list text-primary fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h3 class="fw-bold mb-0">@Model.Count()</h3>
+                            <p class="text-muted mb-0">總選項項目</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-success bg-opacity-10 p-3">
+                                <i class="fas fa-dollar-sign text-success fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h3 class="fw-bold mb-0">@Model.Count(x => x.ExtraPrice > 0)</h3>
+                            <p class="text-muted mb-0">付費選項</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-info bg-opacity-10 p-3">
+                                <i class="fas fa-gift text-info fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h3 class="fw-bold mb-0">@Model.Count(x => x.ExtraPrice == 0)</h3>
+                            <p class="text-muted mb-0">免費選項</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="rounded-circle bg-warning bg-opacity-10 p-3">
+                                <i class="fas fa-tags text-warning fs-4"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h3 class="fw-bold mb-0">@Model.GroupBy(x => x.OptionId).Count()</h3>
+                            <p class="text-muted mb-0">選項群組</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 篩選和搜尋 -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="text" class="form-control border-start-0" placeholder="搜尋選項項目名稱..." id="searchInput">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="optionFilter">
+                        <option value="">所有選項群組</option>
+                        @foreach (var group in Model.GroupBy(x => x.Option))
+                        {
+                            <option value="@group.Key.Id">@group.Key.Name</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="priceFilter">
+                        <option value="">所有價格</option>
+                        <option value="free">免費</option>
+                        <option value="paid">付費</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                        <i class="fas fa-undo me-2"></i>清除
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 選項項目表格 -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom-0 py-3">
+            <h5 class="mb-0 text-dark">選項項目列表</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="optionItemsTable">
+                    <thead class="bg-light">
+                        <tr>
+                            <th class="px-4 py-3 border-0">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAll">
+                                </div>
+                            </th>
+                            <th class="px-4 py-3 border-0">選項項目名稱</th>
+                            <th class="px-4 py-3 border-0">所屬選項群組</th>
+                            <th class="px-4 py-3 border-0">額外價格</th>
+                            <th class="px-4 py-3 border-0 text-center">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr data-option-id="@item.OptionId" data-price="@item.ExtraPrice">
+                                <td class="px-4">
+                                    <div class="form-check">
+                                        <input class="form-check-input row-checkbox" type="checkbox" value="@item.Id">
+                                    </div>
+                                </td>
+                                <td class="px-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="option-icon me-3">
+                                           @item.Name
+                                        </div>
+                                 
+                                    </div>
+                                </td>
+                                <td class="px-4">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-2">
+                                        @item.Option?.Name
+                                    </span>
+                                </td>
+                                <td class="px-4">
+                                    @if (item.ExtraPrice > 0)
+                                    {
+                                        <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3 py-2">
+                                            +$@item.ExtraPrice
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2">
+                                            
+                                        </span>
+                                    }
+                                </td>
+                  
+                                <td class="px-4 text-center">
+                                    <div class="btn-group" role="group">
+                                        <a asp-action="Edit" asp-route-id="@item.Id"
+                                           class="btn btn-sm btn-outline-primary"
+                                           title="編輯">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a asp-action="Delete" asp-route-id="@item.Id"
+                                           class="btn btn-sm btn-outline-danger"
+                                           title="刪除">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td> 
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 批量操作 -->
+    <div class="card border-0 shadow-sm mt-3" id="bulkActions" style="display: none;">
+        <div class="card-body">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted">已選擇 </span>
+                    <span class="fw-bold text-primary" id="selectedCount">0</span>
+                    <span class="text-muted"> 個項目</span>
+                </div>
+                <div>
+                    <button class="btn btn-outline-danger btn-sm" onclick="deleteSelected()">
+                        <i class="fas fa-trash me-2"></i>批量刪除
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('searchInput');
+            const optionFilter = document.getElementById('optionFilter');
+            const priceFilter = document.getElementById('priceFilter');
+            const table = document.getElementById('optionItemsTable');
+            const selectAllCheckbox = document.getElementById('selectAll');
+            const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+            const bulkActions = document.getElementById('bulkActions');
+            const selectedCount = document.getElementById('selectedCount');
+
+            // 搜尋功能
+            searchInput.addEventListener('input', filterTable);
+            optionFilter.addEventListener('change', filterTable);
+            priceFilter.addEventListener('change', filterTable);
+
+            function filterTable() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const selectedOption = optionFilter.value;
+                const selectedPrice = priceFilter.value;
+                const rows = table.querySelectorAll('tbody tr');
+
+                rows.forEach(row => {
+                    const name = row.querySelector('h6').textContent.toLowerCase();
+                    const optionId = row.dataset.optionId;
+                    const price = parseFloat(row.dataset.price);
+
+                    let showRow = true;
+
+                    // 搜尋過濾
+                    if (searchTerm && !name.includes(searchTerm)) {
+                        showRow = false;
+                    }
+
+                    // 選項群組過濾
+                    if (selectedOption && optionId !== selectedOption) {
+                        showRow = false;
+                    }
+
+                    // 價格過濾
+                    if (selectedPrice) {
+                        if (selectedPrice === 'free' && price > 0) {
+                            showRow = false;
+                        } else if (selectedPrice === 'paid' && price === 0) {
+                            showRow = false;
+                        }
+                    }
+
+                    row.style.display = showRow ? '' : 'none';
+                });
+            }
+
+            // 清除篩選
+            window.clearFilters = function() {
+                searchInput.value = '';
+                optionFilter.value = '';
+                priceFilter.value = '';
+                filterTable();
+            };
+
+            // 全選功能
+            selectAllCheckbox.addEventListener('change', function() {
+                const visibleCheckboxes = Array.from(rowCheckboxes).filter(cb =>
+                    cb.closest('tr').style.display !== 'none'
+                );
+
+                visibleCheckboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+
+                updateBulkActions();
+            });
+
+            // 行選擇
+            rowCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateBulkActions);
+            });
+
+            function updateBulkActions() {
+                const checkedBoxes = Array.from(rowCheckboxes).filter(cb => cb.checked);
+                const count = checkedBoxes.length;
+
+                selectedCount.textContent = count;
+                bulkActions.style.display = count > 0 ? 'block' : 'none';
+
+                // 更新全選狀態
+                const visibleCheckboxes = Array.from(rowCheckboxes).filter(cb =>
+                    cb.closest('tr').style.display !== 'none'
+                );
+                const visibleChecked = visibleCheckboxes.filter(cb => cb.checked);
+
+                selectAllCheckbox.indeterminate = visibleChecked.length > 0 && visibleChecked.length < visibleCheckboxes.length;
+                selectAllCheckbox.checked = visibleCheckboxes.length > 0 && visibleChecked.length === visibleCheckboxes.length;
+            }
+
+            // 批量刪除
+            window.deleteSelected = function() {
+                const checkedBoxes = Array.from(rowCheckboxes).filter(cb => cb.checked);
+                const ids = checkedBoxes.map(cb => cb.value);
+
+                if (ids.length === 0) return;
+
+                if (confirm(`確定要刪除選中的 ${ids.length} 個選項項目嗎？`)) {
+                    // 這裡可以實作批量刪除的 AJAX 請求
+                    console.log('刪除項目 IDs:', ids);
+                }
+            };
+        });
+    </script>
+}

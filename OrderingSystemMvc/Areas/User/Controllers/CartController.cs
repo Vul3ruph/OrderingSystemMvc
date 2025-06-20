@@ -18,12 +18,12 @@ namespace OrderingSystemMvc.Areas.Admin.Controllers
         }
 
         [HttpPost]
-        public IActionResult Add(int itemId)
+        [ValidateAntiForgeryToken]
+        public IActionResult Add(int menuItemId)
         {
-            var item = _context.MenuItems.FirstOrDefault(x => x.Id == itemId);
+            var item = _context.MenuItems.FirstOrDefault(x => x.Id == menuItemId);
             if (item == null) return NotFound();
 
-            // 將 MenuItem 轉為 CartItem
             var cartItem = new CartItem
             {
                 MenuItemId = item.Id,
@@ -33,12 +33,20 @@ namespace OrderingSystemMvc.Areas.Admin.Controllers
                 ImageUrl = item.ImageUrl
             };
 
-            // 加入購物車邏輯
-            CartHelper.AddToCart(HttpContext, cartItem); // ✅ 寫入 session
+            // ✅ 加入購物車
+            CartHelper.AddToCart(HttpContext, cartItem);
 
-            TempData["Toast"] = "✅ 已加入購物車";
-            return RedirectToAction("Index", "Menu");
+            // ✅ 取得購物車的總數量
+            int totalQuantity = CartHelper.GetCartCount(HttpContext);
+
+            return Json(new
+            {
+                success = true,
+                message = "✅ 已加入購物車",
+                cartCount = totalQuantity  // 👈 傳回前端
+            });
         }
+
 
 
 

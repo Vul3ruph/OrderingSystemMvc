@@ -65,7 +65,7 @@
             const form = $(this).closest('.add-form');
             const id = form.data('id');
 
-            $.post('/Cart/Add', { id }, function (res) {
+            $.post('/User/Cart/Add', { id }, function (res) {
                 if (res.success) {
                     toastr.success(res.message);
                     // 你可以選擇不 reload，而是改 DOM 呈現數量（進階）

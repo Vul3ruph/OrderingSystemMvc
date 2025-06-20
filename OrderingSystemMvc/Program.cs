@@ -43,15 +43,15 @@ app.UseAuthorization();
 // 路由設定
 app.MapControllerRoute(
     name: "areas",
-    pattern: "{area:exists}/{controller=Home}/{action=Index}/{id?}");
+    pattern: "{area:exists}/{controller=Menu}/{action=Index}/{id?}");
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+    pattern: "{controller=Menu}/{action=Index}/{id?}");
 
 app.MapControllerRoute(
     name: "root",
     pattern: "",
-    defaults: new { area = "User", controller = "Home", action = "Index" });
+    defaults: new { area = "User", controller = "Menu", action = "Index" });
 
 app.Run();

@@ -15,6 +15,8 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+    
+
 </head>
 <body>
     <header>
@@ -39,8 +41,14 @@
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">後台管理</a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" asp-area="Admin" asp-controller="MenuItems" asp-action="Index">菜單管理</a></li>
+                                <li><a class="dropdown-item" asp-area="Admin" asp-controller="MenuItem" asp-action="Index">菜單管理</a></li>
                                 <li><a class="dropdown-item" asp-area="Admin" asp-controller="Categories" asp-action="Index">分類管理</a></li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="Admin" asp-controller="Options" asp-action="Index">選項管理</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-area="Admin" asp-controller="OptionItems" asp-action="Index">選項細項</a>
+                                </li>
                             </ul>
                         </li>
                     </ul>
@@ -48,9 +56,13 @@
                     <!-- 🛒 購物車 -->
                     <ul class="navbar-nav">
                         <li class="nav-item">
-                            <a class="nav-link text-dark position-relative" asp-area="User" asp-controller="Cart" asp-action="Index">
-                                🛒 購物車 <span class="badge bg-danger">@cartCount</span>
+                            <a href="/Cart" class="btn btn-outline-primary position-relative">
+                                🛒 購物車
+                                <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                    0
+                                </span>
                             </a>
+
                         </li>
                     </ul>
                 </div>
@@ -70,16 +82,19 @@
         </div>
     </footer>
 
-    <!-- ✅ Toast 彈出訊息 -->
-    <div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 1080">
-        <div class="toast align-items-center text-white bg-success border-0" id="mainToast" role="alert">
+
+    <!-- ✅ Toast 顯示區域 -->
+    <div aria-live="polite" aria-atomic="true" class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+        <div id="toast" class="toast align-items-center text-white bg-success border-0" role="alert">
             <div class="d-flex">
-                <div class="toast-body" id="toast-body-text"></div>
-                <button type="button" class="btn-close btn-close-white me-2 m-auto"
-                        data-bs-dismiss="toast" aria-label="Close"></button>
+                <div class="toast-body" id="toast-body">
+                    ✅ 成功訊息
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
             </div>
         </div>
     </div>
+
 
     <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
@@ -87,7 +102,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
-
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
     <script>
         window.onload = () => {
             const toastText = @Html.Raw(toastMessage);

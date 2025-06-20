@@ -1,0 +1,249 @@
+﻿@model OrderingSystemMvc.Models.OptionItem
+
+@{
+    ViewData["Title"] = "新增選項項目";
+    Layout = "_DashboardLayout";
+
+    // 設定麵包屑
+    var controllerName = ViewContext.RouteData.Values["controller"]?.ToString();
+    var areaName = ViewContext.RouteData.Values["area"]?.ToString();
+
+    ViewBag.BreadcrumbItems = new List<dynamic>
+{
+    new { Title = "選項項目管理", Url = Url.Action("Index", controllerName, new { area = areaName }) },
+    new { Title = "新增選項項目", Url = (string)null }
+};
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- 頁面標題 -->
+            <div class="d-flex align-items-center mb-4">
+                <a asp-action="Index" class="btn btn-outline-secondary me-3">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <div>
+                    <h2 class="text-dark mb-1">新增選項項目</h2>
+                    <p class="text-muted mb-0">建立新的餐點選項項目（如：小份、大份、加料等）</p>
+                </div>
+            </div>
+
+            <!-- 表單卡片 -->
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="mb-0 text-dark">
+                        <i class="fas fa-plus-circle text-primary me-2"></i>
+                        選項項目資訊
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Create" id="createForm">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                        <div class="row">
+                            <!-- 基本資訊 -->
+                            <div class="col-md-8">
+                                <div class="mb-4">
+                                    <label asp-for="Name" class="form-label fw-semibold">
+                                        <i class="fas fa-tag text-primary me-2"></i>項目名稱 *
+                                    </label>
+                                    <input asp-for="Name" class="form-control form-control-lg" placeholder="例如：小份、大份、加蛋、不加蔥..." />
+                                    <span asp-validation-for="Name" class="text-danger small"></span>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label asp-for="OptionId" class="form-label fw-semibold">
+                                        <i class="fas fa-list text-primary me-2"></i>所屬選項群組 *
+                                    </label>
+                                    <select asp-for="OptionId" class="form-select form-select-lg" asp-items="ViewBag.OptionId">
+                                        <option value="">請選擇選項群組</option>
+                                    </select>
+                                    <span asp-validation-for="OptionId" class="text-danger small"></span>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        選擇這個項目屬於哪個選項群組（如：尺寸、配菜、飲料大小等）
+                                    </div>
+                                </div>
+
+                               </div>
+
+                            <!-- 價格與設定 -->
+                            <div class="col-md-4">
+                                <div class="card bg-light border-0 h-100">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-dark mb-3">
+                                            <i class="fas fa-cog text-secondary me-2"></i>
+                                            價格與設定
+                                        </h6>
+
+                                        <div class="mb-3">
+                                            <label asp-for="ExtraPrice" class="form-label fw-semibold">
+                                                <i class="fas fa-dollar-sign text-success me-2"></i>額外價格
+                                            </label>
+                                            <div class="input-group">
+                                                <span class="input-group-text">$</span>
+                                                <input asp-for="ExtraPrice" type="number" step="0.01" min="0" class="form-control" placeholder="0.00" />
+                                            </div>
+                                            <span asp-validation-for="ExtraPrice" class="text-danger small"></span>
+                                            <div class="form-text small">
+                                                輸入 0 表示免費選項
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                   
+                        <!-- 操作按鈕 -->
+                        <div class="d-flex justify-content-between align-items-center mt-4 pt-3 border-top">
+                            <a asp-action="Index" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>取消
+                            </a>
+                            <div>
+                                <button type="button" class="btn btn-outline-primary me-2" onclick="resetForm()">
+                                    <i class="fas fa-undo me-2"></i>重設
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save me-2"></i>儲存選項項目
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const nameInput = document.querySelector('input[name="Name"]');
+            const descriptionInput = document.querySelector('textarea[name="Description"]');
+            const priceInput = document.querySelector('input[name="ExtraPrice"]');
+            const availableInput = document.querySelector('input[name="IsAvailable"]');
+
+            const previewName = document.getElementById('previewName');
+            const previewDescription = document.getElementById('previewDescription');
+            const previewPrice = document.getElementById('previewPrice');
+            const previewIcon = document.getElementById('previewIcon');
+
+            // 即時預覽更新
+            function updatePreview() {
+                const name = nameInput.value || '項目名稱';
+                const description = descriptionInput.value || '描述說明';
+                const price = parseFloat(priceInput.value) || 0;
+                const isAvailable = availableInput.checked;
+
+                previewName.textContent = name;
+                previewDescription.textContent = description;
+
+                // 更新價格顯示
+                if (price > 0) {
+                    previewPrice.textContent = `+$${price}`;
+                    previewPrice.className = 'badge bg-warning rounded-pill';
+                    previewIcon.innerHTML = '<i class="fas fa-dollar-sign text-warning"></i>';
+                    previewIcon.className = 'rounded-circle bg-warning bg-opacity-10 p-2';
+                } else {
+                    previewPrice.textContent = '免費';
+                    previewPrice.className = 'badge bg-success rounded-pill';
+                    previewIcon.innerHTML = '<i class="fas fa-gift text-success"></i>';
+                    previewIcon.className = 'rounded-circle bg-success bg-opacity-10 p-2';
+                }
+
+                // 不可用狀態
+                if (!isAvailable) {
+                    previewName.style.textDecoration = 'line-through';
+                    previewName.style.opacity = '0.6';
+                } else {
+                    previewName.style.textDecoration = 'none';
+                    previewName.style.opacity = '1';
+                }
+            }
+
+            // 綁定事件
+            nameInput.addEventListener('input', updatePreview);
+            descriptionInput.addEventListener('input', updatePreview);
+            priceInput.addEventListener('input', updatePreview);
+            availableInput.addEventListener('change', updatePreview);
+
+            // 初始預覽
+            updatePreview();
+
+            // 重設表單
+            window.resetForm = function() {
+                if (confirm('確定要重設表單嗎？所有輸入的資料將會清除。')) {
+                    document.getElementById('createForm').reset();
+                    setTimeout(updatePreview, 100);
+                }
+            };
+
+            // 表單驗證增強
+            const form = document.getElementById('createForm');
+            form.addEventListener('submit', function(e) {
+                const name = nameInput.value.trim();
+                const optionId = document.querySelector('select[name="OptionId"]').value;
+
+                if (!name) {
+                    e.preventDefault();
+                    nameInput.focus();
+                    showAlert('請輸入項目名稱', 'danger');
+                    return;
+                }
+
+                if (!optionId) {
+                    e.preventDefault();
+                    document.querySelector('select[name="OptionId"]').focus();
+                    showAlert('請選擇所屬選項群組', 'danger');
+                    return;
+                }
+
+                // 顯示載入狀態
+                const submitBtn = form.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>儲存中...';
+            });
+
+            function showAlert(message, type) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+                alertDiv.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+
+                const form = document.getElementById('createForm');
+                form.insertBefore(alertDiv, form.firstChild);
+
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, 5000);
+            }
+        });
+    </script>
+}
+
+<style>
+    .option-icon {
+        transition: all 0.3s ease;
+    }
+
+    .card:hover .option-icon {
+        transform: scale(1.1);
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+    }
+
+    .border-dashed {
+        border-style:

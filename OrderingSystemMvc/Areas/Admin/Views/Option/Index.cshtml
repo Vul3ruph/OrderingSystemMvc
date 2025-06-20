@@ -1,0 +1,41 @@
+﻿@model IEnumerable<OrderingSystemMvc.Models.Option>
+
+@{
+    ViewData["Title"] = "選項大類管理";
+}
+
+<div class="card shadow-sm p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h4 class="mb-0">選項大類</h4>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fas fa-plus"></i> 新增選項
+        </a>
+    </div>
+
+    <table class="table table-bordered table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>名稱</th>
+                <th>是否為單選</th>
+                <th style="width: 150px">操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                    <tr>
+                        <td>@item.Name</td>
+                        <td>@(item.IsSingleChoice ? "單選" : "多選")</td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">
+                                <i class="fas fa-edit"></i> 編輯
+                            </a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">
+                                <i class="fas fa-trash-alt"></i> 刪除
+                            </a>
+                        </td>
+                    </tr>
+            }
+        </tbody>
+    </table>
+</div>
