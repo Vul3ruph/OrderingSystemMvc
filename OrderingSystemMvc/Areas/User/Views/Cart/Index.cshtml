@@ -1,0 +1,79 @@
+﻿@model List<OrderingSystemMvc.Models.CartItem>
+@{
+    ViewData["Title"] = "我的購物車";
+    var total = ViewBag.Total as decimal? ?? 0;
+}
+
+<div class="container py-4 page-section">
+    <h2 class="text-center mb-4">🛒 我的購物車</h2>
+
+
+
+    @if (!Model.Any())
+    {
+        <p>目前購物車是空的喔！</p>
+    }
+    else
+    {
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>品項</th>
+                    <th>單價</th>
+                    <th>數量</th>
+                    <th>小計</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>@item.Name</td>
+                        <td>$@item.Price</td>
+                        <td>
+                            <form method="post" asp-action="Subtract" asp-route-id="@item.MenuItemId" class="d-inline">
+                                <button class="btn btn-sm btn-outline-secondary">-</button>
+                            </form>
+                            @item.Quantity
+                            <form method="post" asp-action="Add" asp-route-id="@item.MenuItemId" class="d-inline">
+                                <button class="btn btn-sm btn-outline-secondary">+</button>
+                            </form>
+
+                        </td>
+                        <td>$@(item.Price * item.Quantity)</td>
+                        <td>
+                            <form method="post" asp-action="Remove" asp-route-id="@item.MenuItemId">
+                                <button class="btn btn-sm btn-outline-danger">移除</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <h4 class="text-end">總金額：<strong class="text-danger">$@total</strong></h4>
+
+        <form method="post" asp-action="Checkout" class="text-end mt-3">
+            <button type="submit" class="btn btn-success">✅ 結帳送出</button>
+        </form>
+    }
+</div>
+@section Scripts {
+    <script>
+        $('.add-btn').click(function () {
+            const form = $(this).closest('.add-form');
+            const id = form.data('id');
+
+            $.post('/Cart/Add', { id }, function (res) {
+                if (res.success) {
+                    toastr.success(res.message);
+                    // 你可以選擇不 reload，而是改 DOM 呈現數量（進階）
+                    setTimeout(() => location.reload(), 500); // 重整讓數量與總金額更新
+                } else {
+                    toastr.error(res.message);
+                }
+            });
+        });
+    </script>
+}

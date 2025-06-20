@@ -1,0 +1,35 @@
+﻿@model OrderingSystemMvc.Models.Order
+
+@{
+    ViewData["Title"] = "訂單明細";
+}
+
+<div class="container page-section py-4">
+    <h2 class="mb-3">📄 訂單 #@Model.Id 明細</h2>
+    <p><strong>建立時間：</strong> @Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</p>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>品項</th>
+                <th>單價</th>
+                <th>數量</th>
+                <th>小計</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td>$@item.Price</td>
+                    <td>@item.Quantity</td>
+                    <td>$@(item.Price * item.Quantity)</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <h4 class="text-end">總金額：<span class="text-danger">$@Model.TotalAmount</span></h4>
+    <a asp-action="Index" class="btn btn-secondary mt-3">← 返回訂單列表</a>
+</div>

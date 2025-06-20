@@ -1,0 +1,105 @@
+﻿@inject IHttpContextAccessor HttpContextAccessor
+@{
+    var cartCount = OrderingSystemMvc.Helpers.CartHelper
+                     .GetCartCount(HttpContextAccessor.HttpContext!);
+    var toastMessage = System.Text.Json.JsonSerializer.Serialize(TempData["Toast"]);
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] - OrderingSystemMvc</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
+            <div class="container-fluid">
+                <a class="navbar-brand" asp-area="User" asp-controller="Home" asp-action="Index">OrderingSystemMvc</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                        data-bs-target=".navbar-collapse" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1">
+                        <!-- 👤 前台區塊 (User) -->
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="User" asp-controller="Menu" asp-action="Index">點餐</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="User" asp-controller="Orders" asp-action="Index">📜 訂單紀錄</a>
+                        </li>
+
+                        <!-- 🛠️ 後台區塊 (Admin) -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">後台管理</a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" asp-area="Admin" asp-controller="MenuItems" asp-action="Index">菜單管理</a></li>
+                                <li><a class="dropdown-item" asp-area="Admin" asp-controller="Categories" asp-action="Index">分類管理</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <!-- 🛒 購物車 -->
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark position-relative" asp-area="User" asp-controller="Cart" asp-action="Index">
+                                🛒 購物車 <span class="badge bg-danger">@cartCount</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2025 - OrderingSystemMvc - <a asp-area="User" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+
+    <!-- ✅ Toast 彈出訊息 -->
+    <div aria-live="polite" aria-atomic="true" class="position-fixed top-0 end-0 p-3" style="z-index: 1080">
+        <div class="toast align-items-center text-white bg-success border-0" id="mainToast" role="alert">
+            <div class="d-flex">
+                <div class="toast-body" id="toast-body-text"></div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                        data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+
+    <script>
+        window.onload = () => {
+            const toastText = @Html.Raw(toastMessage);
+            if (toastText && toastText !== "null" && toastText !== "") {
+                document.getElementById('toast-body-text').innerText = toastText;
+                const toastElement = document.getElementById('mainToast');
+                const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+                toast.show();
+            }
+        };
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

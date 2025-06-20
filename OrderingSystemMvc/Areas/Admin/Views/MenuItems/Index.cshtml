@@ -1,0 +1,34 @@
+﻿@model List<MenuItem>
+
+<h2>餐點列表</h2>
+<a asp-action="Upsert" class="btn btn-primary mb-2">➕ 新增餐點</a>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>名稱</th>
+            <th>描述</th>
+            <th>分類</th>
+            <th>價格</th>
+            <th>排序</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Name</td>
+                <td>@item.Category?.Name</td>
+                <td>@item.Description<td>
+                <td>$@item.Price</td>
+                <td>@item.SortOrder</td>
+                <td>
+                    <a asp-action="Upsert" asp-route-id="@item.Id" class="btn btn-sm btn-warning">✏️ 編輯</a>
+                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger"
+                       onclick="return confirm('確定要刪除？')">🗑️ 刪除</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

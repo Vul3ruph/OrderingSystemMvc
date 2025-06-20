@@ -1,0 +1,81 @@
+﻿@model IEnumerable<OrderingSystemMvc.Models.MenuItem>
+
+@{
+    ViewData["Title"] = "點餐選單";
+    var categories = ViewBag.Categories as List<OrderingSystemMvc.Models.Category>;
+    var selectedCategoryId = ViewBag.SelectedCategoryId as int?;
+}
+
+<div class="container py-4">
+    <h2 class="text-center mb-4">🍽️ 請選擇餐點</h2>
+
+    <!-- 分類按鈕 -->
+    <div class="d-flex justify-content-center mb-4 flex-wrap gap-2">
+        @foreach (var cat in categories)
+        {
+            <a class="btn btn-lg btn-category @(cat.Id == selectedCategoryId ? "active" : "")"
+               asp-action="Index" asp-route-categoryId="@cat.Id">
+                @cat.Name
+            </a>
+        }
+    </div>
+
+    <!-- 餐點卡片 -->
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        @foreach (var item in Model)
+        {
+            <div class="col">
+                <div class="card h-100 menu-card">
+                    <img src="@(@item.ImageUrl ?? "https://via.placeholder.com/400x200?text=No+Image")"
+                         class="card-img-top rounded-top" style="height: 200px; object-fit: cover;"
+                         alt=@item.Name />
+                    <div class="card-body d-flex flex-column justify-content-between">
+                        <h5 class="card-title">@item.Name</h5>
+                        <p class="card-text text-muted mb-2">@item.Description</p>
+                        @if (item.MenuItemOptions != null && item.MenuItemOptions.Any())
+                        {
+                            var optionGroups = item.MenuItemOptions
+                            .Where(mo => mo.Option != null)
+                            .GroupBy(mo => mo.Option!)
+                            .ToList();
+
+                            foreach (var group in optionGroups)
+                            {
+                                <div class="mb-2">
+                                    <strong>@group.Key.Name：</strong>
+
+                                    @if (group.Key.IsSingleChoice)
+                                    {
+                                        foreach (var opt in group.Key.OptionItems!)
+                                        {
+                                            <label class="btn btn-outline-secondary btn-sm me-1">
+                                                <input type="radio" name="option_@item.Id@group.Key.Id" value="@opt.Id" autocomplete="off" /> @opt.Name
+                                            </label>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        foreach (var opt in group.Key.OptionItems!)
+                                        {
+                                            <label class="btn btn-outline-secondary btn-sm me-1">
+                                                <input type="checkbox" name="option_@item.Id@group.Key.Id" value="@opt.Id" autocomplete="off" /> @opt.Name
+                                            </label>
+                                        }
+                                    }
+                                </div>
+                            }
+                        }
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="fw-bold text-danger">$@item.Price</span>
+                            <form asp-controller="Cart" asp-action="Add" method="post" class="d-inline">
+                                <input type="hidden" name="itemId" value="@item.Id" />
+                                <button type="submit" class="btn btn-sm btn-primary">加入購物車</button>
+                            </form>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

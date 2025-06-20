@@ -2,8 +2,9 @@ using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using OrderingSystemMvc.Models;
 
-namespace OrderingSystemMvc.Controllers
+namespace OrderingSystemMvc.Areas.User.Controllers
 {
+    [Area("User")]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;

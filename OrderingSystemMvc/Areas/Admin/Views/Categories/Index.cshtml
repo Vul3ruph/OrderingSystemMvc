@@ -1,0 +1,34 @@
+﻿@model List<OrderingSystemMvc.Models.Category>
+
+<div class="container page-section py-4">
+    <h2>分類管理</h2>
+    <a asp-action="Upsert" class="btn btn-primary mb-3">➕ 新增分類</a>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>名稱</th>
+                <th>排序</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var cat in Model)
+            {
+                <tr>
+                    <td>@cat.Name</td>
+                    <td>@cat.SortOrder</td>
+                    <td>
+                        <a asp-action="Upsert" asp-route-id="@cat.Id" class="btn btn-sm btn-outline-secondary">編輯</a>
+                        <form asp-action="DeleteConfirmed" asp-route-id="@cat.Id" method="post"
+                              onsubmit="return confirm('確定要刪除分類「@cat.Name」嗎？');"
+                              class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-danger">刪除</button>
+                        </form>
+
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

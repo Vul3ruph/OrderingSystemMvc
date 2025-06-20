@@ -19,6 +19,6 @@ namespace OrderingSystemMvc.Models
         public decimal TotalAmount { get; set; }
 
         // ─── 明細 ────────────────────────────────
-        public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+        public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
     }
 }

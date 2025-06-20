@@ -1,0 +1,31 @@
+﻿@model OrderingSystemMvc.Models.Category
+
+@{
+    var isCreate = Model.Id == 0;
+    ViewData["Title"] = isCreate ? "新增分類" : "編輯分類";
+}
+
+<div class="container page-section py-4">
+    <h2>@ViewData["Title"]</h2>
+
+    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+    <form asp-action="Upsert">
+        <input type="hidden" asp-for="Id" /> @* 必填！讓 ASP.NET 知道是新增還是修改 *@
+
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="SortOrder" class="form-label"></label>
+            <input asp-for="SortOrder" class="form-control" />
+            <span asp-validation-for="SortOrder" class="text-danger"></span>
+        </div>
+
+        <button type="submit" class="btn btn-success">💾 儲存</button>
+        <a asp-action="Index" class="btn btn-secondary">返回</a>
+    </form>
+</div>

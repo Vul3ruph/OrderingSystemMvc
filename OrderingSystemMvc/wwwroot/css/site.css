@@ -17,6 +17,77 @@ html {
   min-height: 100%;
 }
 
+/* 奶茶系整體背景色 */
 body {
-  margin-bottom: 60px;
+    background-color: #fff8f0;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* 包裝內容的區塊（白底 + 陰影 + 圓角） */
+.page-section {
+    background-color: #ffffff;
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.05);
+}
+
+/* 焦糖橘分類按鈕 */
+.btn-category {
+    background-color: #ffb703;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1.2rem;
+    transition: background-color 0.3s ease;
+}
+
+    .btn-category:hover,
+    .btn-category.active {
+        background-color: #fb8500;
+        color: #fff;
+    }
+
+/* 餐點卡片樣式 */
+.menu-card {
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: transform 0.2s ease;
+    background-color: #ffffff;
+}
+
+    .menu-card:hover {
+        transform: translateY(-4px);
+    }
+
+/* 加入購物車按鈕 */
+.btn-add-to-cart {
+    background-color: #219ebc;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    transition: background-color 0.2s ease;
+}
+
+    .btn-add-to-cart:hover {
+        background-color: #126782;
+        color: white;
+    }
+
+/* 價格顏色 */
+.price {
+    color: #d62828;
+    font-weight: bold;
+}
+.badge.bg-danger {
+    font-size: 0.8rem;
+    margin-left: 4px;
+}
+.nav-link:hover {
+    color: #fb8500;
+    text-decoration: none;
+}
+
+.badge.bg-danger {
+    border-radius: 12px;
+    padding: 4px 8px;
 }
