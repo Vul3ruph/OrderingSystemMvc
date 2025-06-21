@@ -1,7 +1,11 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿// Areas/User/Controllers/AccountController.cs
+
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using OrderingSystemMvc.Models;
-using OrderingSystemMvc.ViewModels;
+using OrderingSystemMvc.Services;
+using System.Security.Claims;
 
 namespace OrderingSystemMvc.Areas.User.Controllers
 {
@@ -10,186 +14,199 @@ namespace OrderingSystemMvc.Areas.User.Controllers
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly IAdminService _adminService;
 
         public AccountController(
             UserManager<ApplicationUser> userManager,
-            SignInManager<ApplicationUser> signInManager)
+            SignInManager<ApplicationUser> signInManager,
+            IAdminService adminService)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _adminService = adminService;
         }
 
-        // GET: 註冊頁面
         [HttpGet]
-        public IActionResult Register()
+        public IActionResult Login()
         {
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                return RedirectToAction("Index", "Menu");
-            }
             return View();
         }
 
-        // POST: 處理註冊
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Register(RegisterViewModel model)
+        public async Task<IActionResult> Login(string email, string password, bool rememberMe = false)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return View(model);
+                Console.WriteLine($"🔍 嘗試登入: {email}");
+
+                // 1. 尋找用戶
+                var user = await _userManager.FindByEmailAsync(email);
+                if (user == null)
+                {
+                    user = await _userManager.FindByNameAsync(email);
+                }
+
+                if (user == null)
+                {
+                    Console.WriteLine("❌ 找不到用戶");
+                    ModelState.AddModelError(string.Empty, "Email 或密碼錯誤");
+                    return View();
+                }
+
+                Console.WriteLine($"找到用戶: {user.UserName}, UserType: {user.UserType}");
+
+                // 2. 驗證密碼
+                var passwordValid = await _userManager.CheckPasswordAsync(user, password);
+                if (!passwordValid)
+                {
+                    Console.WriteLine("❌ 密碼錯誤");
+                    ModelState.AddModelError(string.Empty, "Email 或密碼錯誤");
+                    return View();
+                }
+
+                // 3. 檢查帳號狀態
+                if (!user.IsActive)
+                {
+                    Console.WriteLine("❌ 用戶未啟用");
+                    ModelState.AddModelError(string.Empty, "帳號已停用，請聯繫客服");
+                    return View();
+                }
+
+                // 4. 更新最後登入時間
+                user.LastLoginAt = DateTime.Now;
+                await _userManager.UpdateAsync(user);
+
+                // 5. 根據用戶類型決定登入方式和導向
+                // 在 AccountController.cs 的 Login 方法中，修改管理員登入後的導向：
+
+                // 6. 根據用戶類型決定登入方式和導向
+                if (user.UserType == "Admin" || user.UserType == "SuperAdmin")
+                {
+                        Console.WriteLine($"🔑 管理員登入流程: {user.UserType}");
+
+                        // 管理員使用 AdminCookies 認證
+                        var adminClaims = new List<Claim>
+                  {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id),
+                    new Claim(ClaimTypes.Name, user.UserName ?? ""),
+                    new Claim(ClaimTypes.Email, user.Email ?? ""),
+                    new Claim("DisplayName", user.DisplayName ?? user.UserName ?? ""),
+                    new Claim("UserType", user.UserType)
+                };
+
+                    var adminIdentity = new ClaimsIdentity(adminClaims, "AdminCookies");
+                    var adminAuthProperties = new AuthenticationProperties
+                    {
+                        IsPersistent = rememberMe,
+                        ExpiresUtc = DateTimeOffset.UtcNow.AddHours(8)
+                    };
+
+                    await HttpContext.SignInAsync("AdminCookies", new ClaimsPrincipal(adminIdentity), adminAuthProperties);
+                    Console.WriteLine("✅ AdminCookies 認證完成");
+
+                    // 🎯 導向 Dashboard 首頁
+                    Console.WriteLine("🎯 導向管理後台首頁: /Admin/Dashboard");
+                    return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
+                }
+                else
+                {
+                    Console.WriteLine($"✅ 一般會員登入: {user.UserName}");
+
+                    // 一般會員使用預設 Identity 認證
+                    await _signInManager.SignInAsync(user, rememberMe);
+
+                    // 導向前台菜單
+                    return RedirectToAction("Index", "Menu", new { area = "User" });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ 登入過程發生錯誤: {ex.Message}");
+                ModelState.AddModelError(string.Empty, "登入過程發生錯誤，請稍後再試");
+                return View();
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Logout()
+        {
+            try
+            {
+                // 檢查當前用戶類型，決定登出方式
+                var userType = User.FindFirst("UserType")?.Value;
+
+                if (userType == "Admin" || userType == "SuperAdmin")
+                {
+                    // 管理員登出
+                    await HttpContext.SignOutAsync("AdminCookies");
+                    Console.WriteLine("✅ 管理員已登出");
+                }
+                else
+                {
+                    // 一般會員登出
+                    await _signInManager.SignOutAsync();
+                    Console.WriteLine("✅ 會員已登出");
+                }
+
+                // 清除所有認證（保險起見）
+                await HttpContext.SignOutAsync("AdminCookies");
+                await _signInManager.SignOutAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"登出時發生錯誤: {ex.Message}");
             }
 
-            // 檢查 Email 是否已被使用
-            var existingUser = await _userManager.FindByEmailAsync(model.Email);
-            if (existingUser != null)
+            return RedirectToAction("Index", "Menu", new { area = "User" });
+        }
+
+        [HttpGet]
+        public IActionResult Register()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Register(string email, string password, string confirmPassword, string displayName)
+        {
+            if (password != confirmPassword)
             {
-                ModelState.AddModelError("Email", "此 Email 已被註冊");
-                return View(model);
+                ModelState.AddModelError(string.Empty, "密碼確認不符");
+                return View();
             }
 
-            // 建立新用戶
             var user = new ApplicationUser
             {
-                UserName = model.Email, // 使用 Email 作為用戶名
-                Email = model.Email,
-                PhoneNumber = model.PhoneNumber,
-                EmailConfirmed = true // 暫時設為已確認，實際專案可能需要 Email 驗證
+                UserName = email,
+                Email = email,
+                DisplayName = displayName,
+                UserType = "Customer", // 註冊的都是一般顧客
+                IsActive = true,
+                CreatedAt = DateTime.Now
             };
 
-            var result = await _userManager.CreateAsync(user, model.Password);
-
+            var result = await _userManager.CreateAsync(user, password);
             if (result.Succeeded)
             {
-                // 註冊成功，自動登入
-                await _signInManager.SignInAsync(user, isPersistent: false);
+                Console.WriteLine($"✅ 新用戶註冊成功: {email}");
 
-                TempData["Success"] = "🎉 註冊成功！歡迎加入我們！";
-                return RedirectToAction("Index", "Menu");
+                // 自動登入
+                await _signInManager.SignInAsync(user, isPersistent: false);
+                return RedirectToAction("Index", "Menu", new { area = "User" });
             }
 
-            // 註冊失敗，顯示錯誤
             foreach (var error in result.Errors)
             {
                 ModelState.AddModelError(string.Empty, error.Description);
             }
 
-            return View(model);
-        }
-
-        // GET: 登入頁面
-        [HttpGet]
-        public IActionResult Login(string? returnUrl = null)
-        {
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                return RedirectToAction("Index", "Menu");
-            }
-
-            ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
 
-        // POST: 處理登入
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
+        [HttpGet]
+        public IActionResult AccessDenied()
         {
-            ViewData["ReturnUrl"] = returnUrl;
-
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            var result = await _signInManager.PasswordSignInAsync(
-                model.Email,
-                model.Password,
-                model.RememberMe,
-                lockoutOnFailure: false);
-
-            if (result.Succeeded)
-            {
-                TempData["Success"] = "登入成功！";
-
-                if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                {
-                    return Redirect(returnUrl);
-                }
-
-                return RedirectToAction("Index", "Menu");
-            }
-
-            ModelState.AddModelError(string.Empty, "Email 或密碼錯誤");
-            return View(model);
-        }
-
-        // POST: 登出
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Logout()
-        {
-            await _signInManager.SignOutAsync();
-            TempData["Success"] = "已成功登出";
-            return RedirectToAction("Index", "Menu");
-        }
-
-        // GET: 會員資料頁面
-        public async Task<IActionResult> Profile()
-        {
-            if (!User.Identity?.IsAuthenticated == true)
-            {
-                return RedirectToAction("Login");
-            }
-
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            var model = new ProfileViewModel
-            {
-                Email = user.Email!,
-                PhoneNumber = user.PhoneNumber
-            };
-
-            return View(model);
-        }
-
-        // POST: 更新會員資料
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Profile(ProfileViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return NotFound();
-            }
-
-            user.PhoneNumber = model.PhoneNumber;
-
-            var result = await _userManager.UpdateAsync(user);
-
-            if (result.Succeeded)
-            {
-                TempData["Success"] = "資料更新成功！";
-            }
-            else
-            {
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
-            }
-
-            return View(model);
+            return View();
         }
     }
 }

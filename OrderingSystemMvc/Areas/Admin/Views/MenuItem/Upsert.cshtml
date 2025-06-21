@@ -1,4 +1,7 @@
 ﻿@model MenuItem
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
 <link rel="stylesheet" href="~/css/menu-options-editor.css" />
 @{
     var isCreate = Model.Id == 0;

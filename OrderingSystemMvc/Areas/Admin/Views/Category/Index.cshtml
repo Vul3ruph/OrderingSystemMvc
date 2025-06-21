@@ -1,5 +1,8 @@
 ﻿@model List<OrderingSystemMvc.Models.Category>
 
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
 <div class="container page-section py-4">
     <h2>分類管理</h2>
     <a asp-action="Upsert" class="btn btn-primary mb-3">➕ 新增分類</a>

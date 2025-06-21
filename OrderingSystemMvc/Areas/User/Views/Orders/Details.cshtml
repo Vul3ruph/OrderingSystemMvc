@@ -1,6 +1,23 @@
 ﻿@model OrderingSystemMvc.Models.Order
 @{
     ViewData["Title"] = $"訂單 #{Model.Id} 詳細資訊";
+
+    // 定義狀態流程和對應的進度
+    var statusFlow = new Dictionary<string, int>
+    {
+        { "PENDING", 1 },
+        { "CONFIRMED", 2 },
+        { "PREPARING", 3 },
+        { "READY", 4 },
+        { "DELIVERED", 4 },
+        { "CANCELLED", 0 },
+        { "REFUNDED", 0 }
+    };
+
+    var currentStatusCode = Model.Status?.Code ?? "PENDING";
+    var currentProgress = statusFlow.ContainsKey(currentStatusCode) ? statusFlow[currentStatusCode] : 1;
+    var isCompleted = currentStatusCode == "DELIVERED" || currentStatusCode == "READY";
+    var isCancelled = currentStatusCode == "CANCELLED" || currentStatusCode == "REFUNDED";
 }
 
 <div class="container py-4">
@@ -24,22 +41,41 @@
     </div>
 
     <!-- 訂單狀態橫幅 -->
-    <div class="alert alert-info border-0 mb-4">
+    <div class="alert @(isCancelled ? "alert-danger" : isCompleted ? "alert-success" : "alert-info") border-0 mb-4">
         <div class="row align-items-center">
             <div class="col-md-6">
                 <h5 class="mb-1">
-                    <span class="badge bg-warning text-dark me-2">
-                        <i class="fas fa-clock me-1"></i>
+                    <span class="badge @(GetStatusBadgeClass(currentStatusCode)) me-2">
+                        <i class="@(GetStatusIcon(currentStatusCode)) me-1"></i>
                         @(Model.Status?.Name ?? "處理中")
                     </span>
                 </h5>
                 <p class="mb-0 small">訂單建立時間：@Model.CreatedAt.ToString("yyyy年MM月dd日 HH:mm")</p>
             </div>
             <div class="col-md-6 text-md-end mt-2 mt-md-0">
-                <div class="progress" style="height: 8px;">
-                    <div class="progress-bar bg-warning" role="progressbar" style="width: 25%"></div>
-                </div>
-                <small class="text-muted">預計完成時間：@Model.CreatedAt.AddMinutes(20).ToString("HH:mm")</small>
+                @if (!isCancelled)
+                {
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar @(isCompleted ? "bg-success" : "bg-warning")"
+                             role="progressbar" style="width: @(currentProgress * 25)%"></div>
+                    </div>
+                    @if (!isCompleted)
+                    {
+                        <small class="text-muted">預計完成時間：@Model.CreatedAt.AddMinutes(20).ToString("HH:mm")</small>
+                    }
+                    else
+                    {
+                        <small class="text-success">
+                            <i class="fas fa-check-circle me-1"></i>訂單已完成
+                        </small>
+                    }
+                }
+                else
+                {
+                    <small class="text-danger">
+                        <i class="fas fa-times-circle me-1"></i>訂單已取消
+                    </small>
+                }
             </div>
         </div>
     </div>
@@ -87,8 +123,8 @@
                                                             @string.Join("、", item.OrderOptionItems.Select(o => o.OptionItem?.Name ?? "選項"))
                                                         </div>
                                                     }
-                                                    <div class="small text-success">
-                                                        <i class="fas fa-check-circle me-1"></i>已確認
+                                                    <div class="small @(GetItemStatusClass(currentStatusCode))">
+                                                        <i class="@(GetItemStatusIcon(currentStatusCode)) me-1"></i>@GetItemStatusText(currentStatusCode)
                                                     </div>
                                                 </div>
                                             </div>
@@ -133,36 +169,54 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-3 text-center mb-3">
-                            <div class="position-relative">
-                                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
-                                <h6 class="small fw-bold">訂單已建立</h6>
-                                <p class="small text-muted mb-0">@Model.CreatedAt.ToString("MM/dd HH:mm")</p>
+                    @if (isCancelled)
+                    {
+                        <div class="text-center py-4">
+                            <i class="fas fa-times-circle fa-4x text-danger mb-3"></i>
+                            <h5 class="text-danger">訂單已@(currentStatusCode == "CANCELLED" ? "取消" : "退款")</h5>
+                            <p class="text-muted">如有疑問請聯絡客服</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="row">
+                            <!-- 步驟1：訂單已建立 -->
+                            <div class="col-md-3 text-center mb-3">
+                                <div class="position-relative">
+                                    <i class="fas fa-check-circle fa-2x @(currentProgress >= 1 ? "text-success" : "text-muted") mb-2"></i>
+                                    <h6 class="small fw-bold @(currentProgress >= 1 ? "text-success" : "text-muted")">訂單已建立</h6>
+                                    <p class="small text-muted mb-0">@Model.CreatedAt.ToString("MM/dd HH:mm")</p>
+                                </div>
+                            </div>
+
+                            <!-- 步驟2：訂單確認 -->
+                            <div class="col-md-3 text-center mb-3">
+                                <div class="position-relative">
+                                    <i class="fas fa-@(currentProgress >= 2 ? "check" : currentProgress == 1 ? "clock" : "circle") fa-2x @(currentProgress >= 2 ? "text-success" : currentProgress == 1 ? "text-warning" : "text-muted") mb-2"></i>
+                                    <h6 class="small fw-bold @(currentProgress >= 2 ? "text-success" : currentProgress == 1 ? "text-warning" : "text-muted")">訂單確認</h6>
+                                    <p class="small text-muted mb-0">@(currentProgress >= 2 ? "已確認" : currentProgress == 1 ? "處理中..." : "等待中")</p>
+                                </div>
+                            </div>
+
+                            <!-- 步驟3：開始製作 -->
+                            <div class="col-md-3 text-center mb-3">
+                                <div class="position-relative">
+                                    <i class="fas fa-@(currentProgress >= 3 ? "check" : currentProgress == 2 ? "utensils" : "circle") fa-2x @(currentProgress >= 3 ? "text-success" : currentProgress == 2 ? "text-primary" : "text-muted") mb-2"></i>
+                                    <h6 class="small fw-bold @(currentProgress >= 3 ? "text-success" : currentProgress == 2 ? "text-primary" : "text-muted")">開始製作</h6>
+                                    <p class="small text-muted mb-0">@(currentProgress >= 3 ? "製作中" : currentProgress == 2 ? "準備製作" : "等待中")</p>
+                                </div>
+                            </div>
+
+                            <!-- 步驟4：製作完成 -->
+                            <div class="col-md-3 text-center mb-3">
+                                <div class="position-relative">
+                                    <i class="fas fa-@(currentProgress >= 4 ? "check-circle" : currentProgress == 3 ? "clock" : "circle") fa-2x @(currentProgress >= 4 ? "text-success" : currentProgress == 3 ? "text-warning" : "text-muted") mb-2"></i>
+                                    <h6 class="small fw-bold @(currentProgress >= 4 ? "text-success" : currentProgress == 3 ? "text-warning" : "text-muted")">製作完成</h6>
+                                    <p class="small text-muted mb-0">@(currentProgress >= 4 ? (currentStatusCode == "DELIVERED" ? "已送達" : "可取餐") : currentProgress == 3 ? "即將完成" : "等待中")</p>
+                                </div>
                             </div>
                         </div>
-                        <div class="col-md-3 text-center mb-3">
-                            <div class="position-relative">
-                                <i class="fas fa-clock fa-2x text-warning mb-2"></i>
-                                <h6 class="small fw-bold">訂單確認中</h6>
-                                <p class="small text-muted mb-0">處理中...</p>
-                            </div>
-                        </div>
-                        <div class="col-md-3 text-center mb-3">
-                            <div class="position-relative">
-                                <i class="fas fa-utensils fa-2x text-muted mb-2"></i>
-                                <h6 class="small fw-bold text-muted">開始製作</h6>
-                                <p class="small text-muted mb-0">等待中</p>
-                            </div>
-                        </div>
-                        <div class="col-md-3 text-center mb-3">
-                            <div class="position-relative">
-                                <i class="fas fa-bell fa-2x text-muted mb-2"></i>
-                                <h6 class="small fw-bold text-muted">製作完成</h6>
-                                <p class="small text-muted mb-0">等待中</p>
-                            </div>
-                        </div>
-                    </div>
+                    }
                 </div>
             </div>
         </div>
@@ -170,7 +224,7 @@
         <!-- 右側：訂單摘要 -->
         <div class="col-lg-4">
             <!-- 付款資訊 -->
-            <div class="card shadow-sm mb-4 sticky-top" style="top: 20px;">
+            <div class="card shadow-sm mb-4">
                 <div class="card-header bg-primary text-white">
                     <h5 class="mb-0">
                         <i class="fas fa-credit-card me-2"></i>
@@ -219,16 +273,23 @@
                             <i class="fas fa-print me-2"></i>列印收據
                         </button>
 
-                    @*     @if (User.Identity?.IsAuthenticated == true)
+                        @if (User.Identity?.IsAuthenticated == true && isCompleted)
                         {
                             <a href="#" class="btn btn-outline-success">
                                 <i class="fas fa-star me-2"></i>評價訂單
                             </a>
                         }
 
-                        <a href="tel:+886212345678" class="btn btn-outline-warning">
-                            <i class="fas fa-phone me-2"></i>聯絡店家
-                        </a> *@
+                     
+
+                        @if (currentProgress >= 4)
+                        {
+                            <div class="alert alert-success border-0 mt-2 mb-0">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>您的餐點已經準備好了！</strong><br>
+                                <small>請到櫃台取餐，謝謝！</small>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -236,16 +297,99 @@
     </div>
 </div>
 
+@functions {
+    string GetStatusBadgeClass(string statusCode)
+    {
+        return statusCode switch
+        {
+            "PENDING" => "bg-warning text-dark",
+            "CONFIRMED" => "bg-info",
+            "PREPARING" => "bg-primary",
+            "READY" => "bg-success",
+            "DELIVERED" => "bg-success",
+            "CANCELLED" => "bg-danger",
+            "REFUNDED" => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
 
+    string GetStatusIcon(string statusCode)
+    {
+        return statusCode switch
+        {
+            "PENDING" => "fas fa-clock",
+            "CONFIRMED" => "fas fa-check",
+            "PREPARING" => "fas fa-utensils",
+            "READY" => "fas fa-bell",
+            "DELIVERED" => "fas fa-check-circle",
+            "CANCELLED" => "fas fa-times-circle",
+            "REFUNDED" => "fas fa-undo",
+            _ => "fas fa-question"
+        };
+    }
+
+    string GetItemStatusClass(string statusCode)
+    {
+        return statusCode switch
+        {
+            "PENDING" => "text-warning",
+            "CONFIRMED" => "text-info",
+            "PREPARING" => "text-primary",
+            "READY" => "text-success",
+            "DELIVERED" => "text-success",
+            "CANCELLED" => "text-danger",
+            "REFUNDED" => "text-secondary",
+            _ => "text-muted"
+        };
+    }
+
+    string GetItemStatusIcon(string statusCode)
+    {
+        return statusCode switch
+        {
+            "PENDING" => "fas fa-clock",
+            "CONFIRMED" => "fas fa-check-circle",
+            "PREPARING" => "fas fa-fire",
+            "READY" => "fas fa-check-circle",
+            "DELIVERED" => "fas fa-check-circle",
+            "CANCELLED" => "fas fa-times-circle",
+            "REFUNDED" => "fas fa-undo",
+            _ => "fas fa-question-circle"
+        };
+    }
+
+    string GetItemStatusText(string statusCode)
+    {
+        return statusCode switch
+        {
+            "PENDING" => "等待確認",
+            "CONFIRMED" => "已確認",
+            "PREPARING" => "製作中",
+            "READY" => "已完成",
+            "DELIVERED" => "已送達",
+            "CANCELLED" => "已取消",
+            "REFUNDED" => "已退款",
+            _ => "處理中"
+        };
+    }
+}
 
 @section Scripts {
     <script>
         $(document).ready(function() {
-            // 自動刷新訂單狀態（可選）
+            // 自動刷新訂單狀態（每30秒檢查一次）
             setInterval(function() {
-                // 這裡可以加入 AJAX 來檢查訂單狀態更新
-                console.log('檢查訂單狀態更新...');
-            }, 30000); // 每30秒檢查一次
+                // 檢查訂單狀態是否有更新
+                $.get('@Url.Action("GetOrderStatus", new { id = Model.Id })', function(data) {
+                    if (data.statusChanged) {
+                        // 如果狀態有變化，重新載入頁面
+                        location.reload();
+                    }
+                }).fail(function() {
+                    console.log('無法檢查狀態更新');
+                });
+            }, 30000);
         });
     </script>
 }
+

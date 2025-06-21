@@ -238,5 +238,48 @@ namespace OrderingSystemMvc.Areas.User.Controllers
 
             return View("Index", orders);
         }
+
+        // 在 User/OrdersController 中加入這個方法
+
+        // GET: 檢查訂單狀態是否有更新
+        [HttpGet]
+        public async Task<IActionResult> GetOrderStatus(int id)
+        {
+            try
+            {
+                var order = await _context.Orders
+                    .Include(o => o.Status)
+                    .FirstOrDefaultAsync(o => o.Id == id);
+
+                if (order == null)
+                {
+                    return Json(new { statusChanged = false, error = "訂單不存在" });
+                }
+
+                // 檢查權限
+                if (User.Identity?.IsAuthenticated == true)
+                {
+                    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    if (order.UserId != userId)
+                    {
+                        return Json(new { statusChanged = false, error = "無權限" });
+                    }
+                }
+
+                // 返回當前狀態（前端可以比較是否有變化）
+                return Json(new
+                {
+                    statusChanged = false, // 前端需要比較來判斷
+                    currentStatus = order.Status?.Code,
+                    currentStatusName = order.Status?.Name,
+                    updatedAt = DateTime.Now
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"檢查狀態錯誤: {ex.Message}");
+                return Json(new { statusChanged = false, error = "系統錯誤" });
+            }
+        }
     }
 }

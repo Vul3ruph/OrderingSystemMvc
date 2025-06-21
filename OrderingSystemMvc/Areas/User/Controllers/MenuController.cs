@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using OrderingSystemMvc.Helpers;
 using OrderingSystemMvc.Models;
+using OrderingSystemMvc.Data;
 namespace OrderingSystemMvc.Areas.Admin.Controllers
 {
     [Area("User")]

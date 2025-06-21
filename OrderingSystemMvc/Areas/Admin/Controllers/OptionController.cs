@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using OrderingSystemMvc.Data;
 using OrderingSystemMvc.Models;
@@ -7,6 +8,7 @@ using System;
 namespace OrderingSystemMvc.Areas.Admin.Controllers
 {
     [Area("Admin")]
+    [Authorize(AuthenticationSchemes = "AdminCookies")]
     public class OptionController : Controller
     {
         private readonly ApplicationDbContext _context;

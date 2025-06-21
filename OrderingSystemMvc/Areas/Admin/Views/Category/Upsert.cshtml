@@ -1,5 +1,7 @@
 ﻿@model OrderingSystemMvc.Models.Category
-
+@{
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
 @{
     var isCreate = Model.Id == 0;
     ViewData["Title"] = isCreate ? "新增分類" : "編輯分類";

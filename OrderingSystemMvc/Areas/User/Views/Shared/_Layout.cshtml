@@ -18,6 +18,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 
+
 </head>
 <body>
     <header>
@@ -45,35 +46,39 @@
                                 <i class="fas fa-receipt me-1"></i>訂單紀錄
                             </a>
                         </li>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <!-- 🛠️ 後台區塊 (Admin) -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                    <i class="fas fa-cogs me-1"></i>後台管理
+                                </a>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a class="dropdown-item" asp-area="Admin" asp-controller="MenuItem" asp-action="Index">
+                                            <i class="fas fa-hamburger me-2"></i>菜單管理
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-area="Admin" asp-controller="Categories" asp-action="Index">
+                                            <i class="fas fa-tags me-2"></i>分類管理
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-area="Admin" asp-controller="Options" asp-action="Index">
+                                            <i class="fas fa-sliders-h me-2"></i>選項管理
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-area="Admin" asp-controller="OptionItems" asp-action="Index">
+                                            <i class="fas fa-list me-2"></i>選項細項
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
 
-                        <!-- 🛠️ 後台區塊 (Admin) -->
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
-                                <i class="fas fa-cogs me-1"></i>後台管理
-                            </a>
-                            <ul class="dropdown-menu">
-                                <li>
-                                    <a class="dropdown-item" asp-area="Admin" asp-controller="MenuItem" asp-action="Index">
-                                        <i class="fas fa-hamburger me-2"></i>菜單管理
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-area="Admin" asp-controller="Categories" asp-action="Index">
-                                        <i class="fas fa-tags me-2"></i>分類管理
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-area="Admin" asp-controller="Options" asp-action="Index">
-                                        <i class="fas fa-sliders-h me-2"></i>選項管理
-                                    </a>
-                                </li>
-                                <li>
-                                    <a class="dropdown-item" asp-area="Admin" asp-controller="OptionItems" asp-action="Index">
-                                        <i class="fas fa-list me-2"></i>選項細項
-                                    </a>
-                                </li>
-                            </ul>
-                        </li>
+                       
                     </ul>
 
                     <!-- 🛒 購物車 + 會員功能 -->
