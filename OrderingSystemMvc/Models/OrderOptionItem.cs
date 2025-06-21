@@ -1,4 +1,5 @@
-﻿namespace OrderingSystemMvc.Models
+﻿
+namespace OrderingSystemMvc.Models
 {
     public class OrderOptionItem
     {

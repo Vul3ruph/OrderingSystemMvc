@@ -1,0 +1,144 @@
+﻿@model OrderingSystemMvc.ViewModels.ProfileViewModel
+@{
+    ViewData["Title"] = "會員資料";
+}
+
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-edit me-2"></i>會員資料管理
+                    </h4>
+                </div>
+                <div class="card-body p-4">
+
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show">
+                            <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <form asp-action="Profile" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="Email" class="form-label fw-semibold">
+                                        <i class="fas fa-envelope me-1"></i>Email
+                                    </label>
+                                    <input asp-for="Email" class="form-control" readonly style="background-color: #f8f9fa;" />
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>Email 無法修改
+                                    </div>
+                                    <span asp-validation-for="Email" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label asp-for="PhoneNumber" class="form-label fw-semibold">
+                                        <i class="fas fa-phone me-1"></i>手機號碼
+                                    </label>
+                                    <input asp-for="PhoneNumber" class="form-control" placeholder="09xxxxxxxx" />
+                                    <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="d-flex gap-2">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>儲存變更
+                                    </button>
+
+                                    <a asp-area="User" asp-controller="Menu" asp-action="Index" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>返回選單
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 帳戶統計卡片 -->
+            <div class="row mt-4">
+                <div class="col-md-4">
+                    <div class="card text-center border-primary">
+                        <div class="card-body">
+                            <i class="fas fa-shopping-cart fa-2x text-primary mb-2"></i>
+                            <h6 class="card-title">總訂單數</h6>
+                            <h4 class="text-primary">0</h4>
+                            <small class="text-muted">筆訂單</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card text-center border-success">
+                        <div class="card-body">
+                            <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
+                            <h6 class="card-title">消費金額</h6>
+                            <h4 class="text-success">$0</h4>
+                            <small class="text-muted">累計消費</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card text-center border-warning">
+                        <div class="card-body">
+                            <i class="fas fa-star fa-2x text-warning mb-2"></i>
+                            <h6 class="card-title">會員等級</h6>
+                            <h4 class="text-warning">新手</h4>
+                            <small class="text-muted">會員</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 快捷功能 -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-tools me-2"></i>快捷功能
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <a href="#" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-history me-2"></i>查看訂單紀錄
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="#" class="btn btn-outline-warning w-100">
+                                <i class="fas fa-gift me-2"></i>我的優惠券
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="#" class="btn btn-outline-info w-100">
+                                <i class="fas fa-key me-2"></i>修改密碼
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a asp-area="User" asp-controller="Menu" asp-action="Index" class="btn btn-outline-success w-100">
+                                <i class="fas fa-utensils me-2"></i>開始點餐
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

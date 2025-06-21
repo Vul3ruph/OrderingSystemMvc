@@ -15,6 +15,8 @@ public class ApplicationDbContext : IdentityDbContext
     public DbSet<Option> Options { get; set; }
     public DbSet<OptionItem> OptionItems { get; set; }
     public DbSet<MenuItemOption> MenuItemOptions { get; set; }
+    public DbSet<OrderOptionItem> OrderOptionItems { get; set; }
+    public DbSet<OrderStatus> OrderStatuses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

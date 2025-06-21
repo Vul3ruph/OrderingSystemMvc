@@ -15,19 +15,9 @@ namespace OrderingSystemMvc.Models
         public int Quantity { get; set; }
         public List<OrderOptionItem> OrderOptionItems { get; set; } = new();
 
-
-
         [NotMapped]
-        public string OptionSummary
-        {
-            get
-            {
-                if (OrderOptionItems == null || !OrderOptionItems.Any())
-                    return string.Empty;
+        public string? OptionSummary { get; set; } 
 
-                return string.Join(", ", OrderOptionItems.Select(o => o.OptionItem.Name));
-            }
-        }
 
     }
 }

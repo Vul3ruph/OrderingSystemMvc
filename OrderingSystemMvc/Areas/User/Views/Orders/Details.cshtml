@@ -1,35 +1,251 @@
 ﻿@model OrderingSystemMvc.Models.Order
-
 @{
-    ViewData["Title"] = "訂單明細";
+    ViewData["Title"] = $"訂單 #{Model.Id} 詳細資訊";
 }
 
-<div class="container page-section py-4">
-    <h2 class="mb-3">📄 訂單 #@Model.Id 明細</h2>
-    <p><strong>建立時間：</strong> @Model.CreatedAt.ToString("yyyy-MM-dd HH:mm")</p>
+<div class="container py-4">
+    <!-- 頁面標題 -->
+    <div class="row mb-4">
+        <div class="col">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-receipt text-primary me-2"></i>
+                        訂單 #@Model.Id 詳細資訊
+                    </h2>
+                </div>
+                <div>
+                    <a asp-area="User" asp-controller="Orders" asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>返回訂單列表
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>品項</th>
-                <th>單價</th>
-                <th>數量</th>
-                <th>小計</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model.Items)
-            {
-                <tr>
-                    <td>@item.Name</td>
-                    <td>$@item.Price</td>
-                    <td>@item.Quantity</td>
-                    <td>$@(item.Price * item.Quantity)</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <!-- 訂單狀態橫幅 -->
+    <div class="alert alert-info border-0 mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="mb-1">
+                    <span class="badge bg-warning text-dark me-2">
+                        <i class="fas fa-clock me-1"></i>
+                        @(Model.Status?.Name ?? "處理中")
+                    </span>
+                </h5>
+                <p class="mb-0 small">訂單建立時間：@Model.CreatedAt.ToString("yyyy年MM月dd日 HH:mm")</p>
+            </div>
+            <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                <div class="progress" style="height: 8px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: 25%"></div>
+                </div>
+                <small class="text-muted">預計完成時間：@Model.CreatedAt.AddMinutes(20).ToString("HH:mm")</small>
+            </div>
+        </div>
+    </div>
 
-    <h4 class="text-end">總金額：<span class="text-danger">$@Model.TotalAmount</span></h4>
-    <a asp-action="Index" class="btn btn-secondary mt-3">← 返回訂單列表</a>
+    <div class="row">
+        <!-- 左側：訂單詳細資訊 -->
+        <div class="col-lg-8">
+            <!-- 訂單商品 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-shopping-bag me-2"></i>
+                        訂購商品 (@Model.Items.Sum(x => x.Quantity) 項)
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th width="50%">商品名稱</th>
+                                    <th width="15%" class="text-center">單價</th>
+                                    <th width="10%" class="text-center">數量</th>
+                                    <th width="15%" class="text-center">加購</th>
+                                    <th width="15%" class="text-end">小計</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.Items)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="me-3">
+                                                    <img src="@(item.MenuItem?.ImageUrl ?? "https://via.placeholder.com/60x60")"
+                                                         alt="@item.Name" class="rounded"
+                                                         style="width: 60px; height: 60px; object-fit: cover;" />
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">@item.Name</h6>
+                                                    @if (item.OrderOptionItems?.Any() == true)
+                                                    {
+                                                        <div class="small text-muted">
+                                                            <i class="fas fa-plus-circle me-1"></i>
+                                                            @string.Join("、", item.OrderOptionItems.Select(o => o.OptionItem?.Name ?? "選項"))
+                                                        </div>
+                                                    }
+                                                    <div class="small text-success">
+                                                        <i class="fas fa-check-circle me-1"></i>已確認
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <span class="fw-bold text-primary">$@item.Price</span>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            <span class="badge bg-secondary">@item.Quantity</span>
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            @if (item.OrderOptionItems?.Any() == true)
+                                            {
+                                                var extraTotal = item.OrderOptionItems.Sum(o => o.ExtraPrice);
+                                                <span class="text-warning fw-semibold">+$@extraTotal</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">-</span>
+                                            }
+                                        </td>
+                                        <td class="text-end align-middle">
+                                            @{
+                                                var itemTotal = item.Price * item.Quantity + (item.OrderOptionItems?.Sum(o => o.ExtraPrice * item.Quantity) ?? 0);
+                                            }
+                                            <span class="fw-bold text-success">$@itemTotal</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 訂單狀態追蹤 -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="fas fa-route me-2"></i>
+                        訂單狀態追蹤
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="position-relative">
+                                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                                <h6 class="small fw-bold">訂單已建立</h6>
+                                <p class="small text-muted mb-0">@Model.CreatedAt.ToString("MM/dd HH:mm")</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="position-relative">
+                                <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                                <h6 class="small fw-bold">訂單確認中</h6>
+                                <p class="small text-muted mb-0">處理中...</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="position-relative">
+                                <i class="fas fa-utensils fa-2x text-muted mb-2"></i>
+                                <h6 class="small fw-bold text-muted">開始製作</h6>
+                                <p class="small text-muted mb-0">等待中</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center mb-3">
+                            <div class="position-relative">
+                                <i class="fas fa-bell fa-2x text-muted mb-2"></i>
+                                <h6 class="small fw-bold text-muted">製作完成</h6>
+                                <p class="small text-muted mb-0">等待中</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側：訂單摘要 -->
+        <div class="col-lg-4">
+            <!-- 付款資訊 -->
+            <div class="card shadow-sm mb-4 sticky-top" style="top: 20px;">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-credit-card me-2"></i>
+                        付款資訊
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>商品總計：</span>
+                        <span>$@(Model.Items.Sum(i => i.Price * i.Quantity))</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>加購費用：</span>
+                        <span>$@(Model.Items.SelectMany(i => i.OrderOptionItems).Sum(o => o.ExtraPrice))</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>服務費：</span>
+                        <span class="text-success">免費</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between mb-3">
+                        <strong>總金額：</strong>
+                        <strong class="text-danger fs-5">$@Model.TotalAmount</strong>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="small text-muted mb-2">付款方式</h6>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-money-bill-wave text-success me-2"></i>
+                            <span>現金付款</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 class="small text-muted mb-2">取餐方式</h6>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-store text-primary me-2"></i>
+                            <span>店內取餐</span>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary" onclick="window.print()">
+                            <i class="fas fa-print me-2"></i>列印收據
+                        </button>
+
+                    @*     @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <a href="#" class="btn btn-outline-success">
+                                <i class="fas fa-star me-2"></i>評價訂單
+                            </a>
+                        }
+
+                        <a href="tel:+886212345678" class="btn btn-outline-warning">
+                            <i class="fas fa-phone me-2"></i>聯絡店家
+                        </a> *@
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // 自動刷新訂單狀態（可選）
+            setInterval(function() {
+                // 這裡可以加入 AJAX 來檢查訂單狀態更新
+                console.log('檢查訂單狀態更新...');
+            }, 30000); // 每30秒檢查一次
+        });
+    </script>
+}

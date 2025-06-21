@@ -1,0 +1,457 @@
+﻿<!-- 菜單項目選項編輯區域 - 兩欄布局 -->
+<div class="row">
+    <!-- 左側：選項編輯器 -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-gradient-primary text-white border-bottom-0">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-cogs me-2"></i>餐點選項設定
+                </h5>
+                <p class="text-white-50 small mb-0">為此餐點添加客製化選項（如：辣度、甜度、配料等）</p>
+            </div>
+            <div class="card-body">
+                <!-- 已選擇的選項列表 -->
+                <div id="selectedOptionsContainer" class="mb-4">
+                    <h6 class="fw-bold mb-3 text-success">
+                        <i class="fas fa-check-circle me-2"></i>已選擇的選項
+                        <span id="selectedOptionsCount" class="badge bg-success ms-2">0</span>
+                    </h6>
+                    <div id="selectedOptionsList" class="row g-3">
+                        <!-- 已選擇的選項會在這裡顯示 -->
+                    </div>
+                    <div id="noSelectedOptions" class="text-center py-4 border-2 border-dashed rounded">
+                        <i class="fas fa-info-circle text-muted fs-3 mb-2 d-block"></i>
+                        <p class="text-muted mb-0">尚未選擇任何選項</p>
+                        <small class="text-muted">請在下方添加餐點選項</small>
+                    </div>
+                </div>
+
+                <!-- 添加新選項 -->
+                <div class="border-top pt-4">
+                    <h6 class="fw-bold mb-3 text-primary">
+                        <i class="fas fa-plus-circle me-2"></i>添加選項
+                    </h6>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-12">
+                            <label class="form-label fw-medium">選擇選項類型</label>
+                            <div class="input-group">
+                                <select class="form-select form-select-lg" id="optionTypeSelect">
+                                    <option value="">請選擇選項類型...</option>
+                                    <!-- 這裡會通過 AJAX 載入選項類型 -->
+                                </select>
+                                <button type="button" class="btn btn-primary btn-lg" id="addOptionBtn">
+                                    <i class="fas fa-plus me-2"></i>添加選項
+                                </button>
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-lightbulb me-1"></i>
+                                選擇後可以預覽該選項的詳細內容
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 選項預覽區域 -->
+                    <div id="optionPreview" class="mt-3 p-3 bg-light rounded" style="display: none;">
+                        <h6 class="fw-bold mb-2">選項預覽</h6>
+                        <div id="optionPreviewContent"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 右側：圖片上傳區域 -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-camera me-2"></i>餐點圖片
+                </h5>
+                <p class="text-muted small mb-0">上傳餐點圖片，建議尺寸 800x600px</p>
+            </div>
+            <div class="card-body">
+                <!-- 圖片預覽區域 -->
+                <div id="imagePreview" class="image-preview-container mb-3" style="display: none;">
+                    <img id="previewImage" src="" alt="圖片預覽" class="preview-image" />
+                    <div class="image-overlay">
+                        <button type="button" class="btn btn-danger btn-sm" onclick="removeImage()">
+                            <i class="fas fa-trash me-1"></i>移除圖片
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 圖片上傳區域 -->
+                <div id="uploadArea" class="upload-area">
+                    <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                    <p class="text-muted mb-2">點擊上傳或拖拽圖片到此處</p>
+                    <input type="file" id="imageInput" class="form-control" name="formFile" accept="image/*" onchange="previewImageFile(this)" />
+                    <small class="text-muted">支援 JPG, PNG, GIF 格式，檔案大小不超過 5MB</small>
+                </div>
+
+                <!-- 如果編輯模式且已有圖片 -->
+                <input type="hidden" id="existingImageUrl" value="@(Model?.ImageUrl ?? "")" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 隱藏的表單字段用於提交 -->
+<div id="hiddenOptionsInputs"></div>
+
+<script>
+    // 選項管理的 JavaScript 代碼
+    class MenuOptionManager {
+        constructor(menuItemId) {
+            this.menuItemId = menuItemId;
+            this.selectedOptions = [];
+            this.availableOptions = [];
+            this.init();
+        }
+
+        async init() {
+            await this.loadAvailableOptions();
+            await this.loadSelectedOptions();
+            this.bindEvents();
+        }
+
+        // 載入可用的選項類型
+        async loadAvailableOptions() {
+            try {
+                console.log('Loading available options...');
+                const response = await fetch('/Admin/MenuItem/GetAvailableOptions');
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Available options data:', data);
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                this.availableOptions = data;
+                this.renderOptionTypeSelect();
+                console.log('Available options loaded successfully');
+            } catch (error) {
+                console.error('載入選項失敗:', error);
+                toastr.error(`載入選項失敗: ${error.message}`);
+            }
+        }
+
+        // 載入已選擇的選項
+        async loadSelectedOptions() {
+            if (!this.menuItemId) {
+                console.log('No menuItemId, skipping loadSelectedOptions');
+                return;
+            }
+
+            try {
+                console.log('Loading selected options for menuItemId:', this.menuItemId);
+                const response = await fetch(`/Admin/MenuItem/GetSelectedOptions/${this.menuItemId}`);
+                console.log('Response status:', response.status);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('Selected options data:', data);
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                this.selectedOptions = data;
+                this.renderSelectedOptions();
+                console.log('Selected options loaded successfully');
+            } catch (error) {
+                console.error('載入已選擇選項失敗:', error);
+                toastr.error(`載入已選擇選項失敗: ${error.message}`);
+            }
+        }
+
+        // 渲染選項類型下拉選單
+        renderOptionTypeSelect() {
+            const select = document.getElementById('optionTypeSelect');
+            select.innerHTML = '<option value="">請選擇選項類型...</option>';
+
+            this.availableOptions.forEach(option => {
+                const isSelected = this.selectedOptions.some(selected => selected.id === option.id);
+                if (!isSelected) {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option.id;
+                    optionElement.textContent = option.name;
+                    optionElement.dataset.details = JSON.stringify(option);
+                    select.appendChild(optionElement);
+                }
+            });
+
+            // 更新可用選項數量顯示
+            const availableCount = this.availableOptions.filter(option =>
+                !this.selectedOptions.some(selected => selected.id === option.id)
+            ).length;
+
+            if (availableCount === 0) {
+                select.innerHTML = '<option value="">所有選項都已添加</option>';
+                select.disabled = true;
+                document.getElementById('addOptionBtn').disabled = true;
+            } else {
+                select.disabled = false;
+                document.getElementById('addOptionBtn').disabled = false;
+            }
+        }
+
+        // 渲染已選擇的選項
+        renderSelectedOptions() {
+            const container = document.getElementById('selectedOptionsList');
+            const noOptionsMsg = document.getElementById('noSelectedOptions');
+            const countBadge = document.getElementById('selectedOptionsCount');
+
+            // 更新計數
+            if (countBadge) {
+                countBadge.textContent = this.selectedOptions.length;
+            }
+
+            if (this.selectedOptions.length === 0) {
+                container.style.display = 'none';
+                noOptionsMsg.style.display = 'block';
+                noOptionsMsg.className = 'no-options-message';
+                return;
+            }
+
+            container.style.display = 'flex';
+            noOptionsMsg.style.display = 'none';
+            container.innerHTML = '';
+
+            this.selectedOptions.forEach(option => {
+                const optionCard = this.createOptionCard(option);
+                container.appendChild(optionCard);
+            });
+
+            this.updateHiddenInputs();
+        }
+
+        // 創建選項卡片
+        createOptionCard(option) {
+            const col = document.createElement('div');
+            col.className = 'col-md-6 col-lg-4';
+
+            col.innerHTML = `
+                <div class="card option-card position-relative h-100">
+                    <button type="button" class="remove-option-btn" onclick="menuOptionManager.removeOption(${option.id})" title="移除選項">
+                        <i class="fas fa-times"></i>
+                    </button>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-3">
+                            <h6 class="card-title mb-0 text-primary fw-bold">
+                                <i class="fas fa-cog me-2"></i>${option.name}
+                            </h6>
+                        </div>
+                        <div class="mb-3">
+                            <span class="option-type-badge ${option.isSingleChoice ? 'single-choice' : 'multi-choice'}">
+                                <i class="fas ${option.isSingleChoice ? 'fa-dot-circle' : 'fa-check-square'} me-1"></i>
+                                ${option.isSingleChoice ? '單選' : '多選'}
+                            </span>
+                            <span class="option-count-badge ms-2">
+                                ${option.optionItems ? option.optionItems.length : 0} 個項目
+                            </span>
+                        </div>
+                        <div class="option-items">
+                            ${option.optionItems ? option.optionItems.map(item =>
+                                `<div class="option-item ${option.isSingleChoice ? 'single-choice' : ''}">
+                                    <div class="option-item-content">
+                                        <div class="option-item-info">
+                                            <div class="option-name">${item.name}</div>
+                                            ${item.description ? `<div class="option-description">${item.description}</div>` : ''}
+                                        </div>
+                                        <div class="option-item-price ${item.price > 0 ? 'paid' : ''}">
+                                            ${item.price > 0 ? `+NT$ ${item.price}` : '免費'}
+                                        </div>
+                                    </div>
+                                </div>`
+                            ).join('') : ''}
+                        </div>
+                        <div class="mt-3 text-muted small">
+                            <i class="fas fa-sort-numeric-down me-1"></i>
+                            排序: ${option.sortOrder || 0}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            return col;
+        }
+
+        // 綁定事件
+        bindEvents() {
+            document.getElementById('addOptionBtn').addEventListener('click', () => {
+                this.addOption();
+            });
+        }
+
+        // 添加選項
+        async addOption() {
+            const select = document.getElementById('optionTypeSelect');
+            const optionId = select.value;
+
+            if (!optionId) {
+                toastr.warning('請選擇要添加的選項類型');
+                return;
+            }
+
+            try {
+                const selectedOption = this.availableOptions.find(opt => opt.id == optionId);
+                if (selectedOption) {
+                    this.selectedOptions.push(selectedOption);
+                    this.renderSelectedOptions();
+                    this.renderOptionTypeSelect(); // 重新渲染下拉選單
+                    toastr.success(`已添加選項: ${selectedOption.name}`);
+                }
+            } catch (error) {
+                console.error('添加選項失敗:', error);
+                toastr.error('添加選項失敗');
+            }
+        }
+
+        // 移除選項
+        removeOption(optionId) {
+            const optionIndex = this.selectedOptions.findIndex(opt => opt.id === optionId);
+            if (optionIndex !== -1) {
+                const removedOption = this.selectedOptions.splice(optionIndex, 1)[0];
+                this.renderSelectedOptions();
+                this.renderOptionTypeSelect(); // 重新渲染下拉選單
+                toastr.info(`已移除選項: ${removedOption.name}`);
+            }
+        }
+
+        // 更新隱藏的表單輸入
+        updateHiddenInputs() {
+            const container = document.getElementById('hiddenOptionsInputs');
+            container.innerHTML = '';
+
+            this.selectedOptions.forEach((option, index) => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = `SelectedOptionIds[${index}]`;
+                input.value = option.id;
+                container.appendChild(input);
+            });
+        }
+
+        // 獲取選擇的選項 ID 列表
+        getSelectedOptionIds() {
+            return this.selectedOptions.map(option => option.id);
+        }
+    }
+
+    // 初始化選項管理器
+    let menuOptionManager;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // 從頁面獲取 menuItemId，如果是新增則為 0
+        const menuItemId = parseInt(document.querySelector('[name="Id"]')?.value || 0);
+        menuOptionManager = new MenuOptionManager(menuItemId);
+    });
+
+    // 表單提交前的驗證
+    function validateOptionsBeforeSubmit() {
+        if (typeof menuOptionManager !== 'undefined' && menuOptionManager) {
+            menuOptionManager.updateHiddenInputs();
+        }
+        return true;
+    }
+
+    // 圖片預覽功能
+    function previewImageFile(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+
+            // 檢查檔案大小 (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('檔案大小不能超過 5MB');
+                input.value = '';
+                return;
+            }
+
+            // 檢查檔案類型
+            if (!file.type.match('image.*')) {
+                alert('請選擇圖片檔案');
+                input.value = '';
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                showImagePreview(e.target.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function showImagePreview(imageSrc) {
+        const previewContainer = document.getElementById('imagePreview');
+        const previewImage = document.getElementById('previewImage');
+        const uploadArea = document.getElementById('uploadArea');
+
+        previewImage.src = imageSrc;
+        previewContainer.style.display = 'block';
+        uploadArea.style.display = 'none';
+    }
+
+    function removeImage() {
+        const previewContainer = document.getElementById('imagePreview');
+        const uploadArea = document.getElementById('uploadArea');
+        const imageInput = document.getElementById('imageInput');
+
+        previewContainer.style.display = 'none';
+        uploadArea.style.display = 'block';
+        imageInput.value = '';
+    }
+
+    // 頁面載入時檢查是否有現有圖片
+    document.addEventListener('DOMContentLoaded', function() {
+        const existingImageUrl = document.getElementById('existingImageUrl')?.value;
+        if (existingImageUrl && existingImageUrl.trim() !== '') {
+            showImagePreview(existingImageUrl);
+        }
+
+        // 拖拽上傳功能
+        const uploadArea = document.getElementById('uploadArea');
+        if (uploadArea) {
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#007bff';
+                uploadArea.style.background = '#e3f2fd';
+            });
+
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#dee2e6';
+                uploadArea.style.background = '#f8f9fa';
+            });
+
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.style.borderColor = '#dee2e6';
+                uploadArea.style.background = '#f8f9fa';
+
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const imageInput = document.getElementById('imageInput');
+                    imageInput.files = files;
+                    previewImageFile(imageInput);
+                }
+            });
+
+            // 點擊上傳區域觸發檔案選擇
+            uploadArea.addEventListener('click', function(e) {
+                if (e.target.tagName !== 'INPUT') {
+                    document.getElementById('imageInput').click();
+                }
+            });
+        }
+    });
+</script>

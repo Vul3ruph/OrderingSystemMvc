@@ -1,7 +1,5 @@
 ﻿using OrderingSystemMvc.Models;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace OrderingSystemMvc.Data;
 
@@ -9,7 +7,25 @@ public static class DataSeeder
 {
     public static void Seed(ApplicationDbContext context)
     {
-        /* ---------- 建立分類（若不存在就建立） ---------- */
+        // ✅ 僅在資料庫「尚未初始化」時才執行
+        if (context.MenuItems.Any())
+        {
+            return; // 已經有資料，就不重複建立
+        }
+
+        /* ---------- 建立 Id = 0 的「未分類」 ---------- */
+        if (!context.Categories.Any(c => c.Id == 0))
+        {
+            context.Categories.Add(new Category
+            {
+                Id = 0,
+                Name = "未分類",
+                SortOrder = -1
+            });
+            context.SaveChanges();
+        }
+
+        /* ---------- 建立分類 ---------- */
         var categoryDict = new Dictionary<string, Category>();
 
         void EnsureCategory(string name, int sortOrder)
@@ -24,20 +40,20 @@ public static class DataSeeder
             categoryDict[name] = cat;
         }
 
-        EnsureCategory("早餐", 1);   // id 會由 DB 產生
+        EnsureCategory("早餐", 1);
         EnsureCategory("輕食", 2);
 
-        /* ---------- 建立餐點（若不存在就建立） ---------- */
+        /* ---------- 建立餐點 ---------- */
         var sampleMenuItems = new[]
         {
             new { Name="經典美式早餐", Desc="雙蛋、酥脆培根、香腸、烤番茄、酪梨、烤吐司", Price=280m, Img="/images/menu/9ebec16d.jpg", Cat="早餐"},
-            new { Name="酪梨班尼迪克蛋", Desc="英式鬆餅、水波蛋、酪梨、荷蘭醬、煙燻鮭魚",   Price=320m, Img="/images/menu/2c72df15.jpg", Cat="早餐"},
-            new { Name="法式吐司套餐", Desc="厚切法式吐司、季節水果、楓糖漿、鮮奶油",       Price=260m, Img="/images/menu/9413afc7.jpg", Cat="早餐"},
-            new { Name="蔬食沙拉碗",   Desc="黎麥、酪梨、烤南瓜、櫛瓜蕃茄、嫩菠菜、藍莓醬",   Price=240m, Img="/images/menu/460fc839.jpg", Cat="輕食"},
+            new { Name="酪梨班尼迪克蛋", Desc="英式鬆餅、水波蛋、酪梨、荷蘭醬、煙燻鮭魚", Price=320m, Img="/images/menu/2c72df15.jpg", Cat="早餐"},
+            new { Name="法式吐司套餐", Desc="厚切法式吐司、季節水果、楓糖漿、鮮奶油", Price=260m, Img="/images/menu/9413afc7.jpg", Cat="早餐"},
+            new { Name="蔬食沙拉碗", Desc="黎麥、酪梨、烤南瓜、櫛瓜蕃茄、嫩菠菜、藍莓醬", Price=240m, Img="/images/menu/460fc839.jpg", Cat="輕食"},
             new { Name="手工捲餅米漢", Desc="義大利馬芝卡起司、手拍豬肉餅、濃縮咖啡、可可粉", Price=180m, Img="/images/menu/23dc2d7b.jpg", Cat="輕食"},
-            new { Name="季節水果鬆餅", Desc="比利時鬆餅、季節水果、鮮奶油、楓糖漿",           Price=220m, Img="/images/menu/0eb6a6af.jpg", Cat="輕食"},
-            new { Name="手沖單品咖啡", Desc="每日精選咖啡豆，由專業咖啡師手沖",               Price=150m, Img="/images/menu/b38e7351.jpg", Cat="輕食"},
-            new { Name="鮮榨果汁",     Desc="每日新鮮水果，現榨果汁",                         Price=130m, Img="/images/menu/45fed28a.jpg", Cat="輕食"},
+            new { Name="季節水果鬆餅", Desc="比利時鬆餅、季節水果、鮮奶油、楓糖漿", Price=220m, Img="/images/menu/0eb6a6af.jpg", Cat="輕食"},
+            new { Name="手沖單品咖啡", Desc="每日精選咖啡豆，由專業咖啡師手沖", Price=150m, Img="/images/menu/b38e7351.jpg", Cat="輕食"},
+            new { Name="鮮榨果汁", Desc="每日新鮮水果，現榨果汁", Price=130m, Img="/images/menu/45fed28a.jpg", Cat="輕食"},
         };
 
         foreach (var m in sampleMenuItems)
@@ -58,7 +74,7 @@ public static class DataSeeder
         }
         context.SaveChanges();
 
-        /* ---------- 建立選項（若不存在就建立） ---------- */
+        /* ---------- 建立選項與選項項目 ---------- */
         var eggOption = context.Options.FirstOrDefault(o => o.Name == "選擇蛋的烹調方式");
         if (eggOption == null)
         {
@@ -79,7 +95,7 @@ public static class DataSeeder
             context.SaveChanges();
         }
 
-        /* ---------- 建立餐點與選項關聯（只給第一道餐點示範） ---------- */
+        /* ---------- 建立關聯：餐點 ↔ 選項 ---------- */
         var firstBreakfast = context.MenuItems.First(mi => mi.Name == "經典美式早餐");
         bool linked = context.MenuItemOptions.Any(mio =>
                        mio.MenuItemId == firstBreakfast.Id && mio.OptionId == eggOption.Id);

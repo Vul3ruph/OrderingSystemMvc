@@ -1,0 +1,91 @@
+﻿@model OrderingSystemMvc.ViewModels.RegisterViewModel
+@{
+    ViewData["Title"] = "會員註冊";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <h2 class="fw-bold text-primary">🍽️ 加入會員</h2>
+                        <p class="text-muted">享受更便利的訂餐體驗</p>
+                    </div>
+
+                    <form asp-action="Register" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label fw-semibold"></label>
+                            <input asp-for="Email" class="form-control form-control-lg" placeholder="your@email.com" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="PhoneNumber" class="form-label fw-semibold"></label>
+                            <input asp-for="PhoneNumber" class="form-control form-control-lg" placeholder="09xxxxxxxx" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label fw-semibold"></label>
+                            <input asp-for="Password" class="form-control form-control-lg" placeholder="至少 6 個字元" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="ConfirmPassword" class="form-label fw-semibold"></label>
+                            <input asp-for="ConfirmPassword" class="form-control form-control-lg" placeholder="再次輸入密碼" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-grid mb-3">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-user-plus me-2"></i>註冊會員
+                            </button>
+                        </div>
+
+                        <div class="text-center">
+                            <p class="mb-0">
+                                已經有帳號了？
+                                <a asp-action="Login" class="text-primary text-decoration-none fw-semibold">立即登入</a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 會員優惠說明 -->
+            <div class="card mt-4 border-0 bg-light">
+                <div class="card-body text-center">
+                    <h6 class="fw-bold text-primary mb-3">🎁 會員專屬好處</h6>
+                    <div class="row g-3">
+                        <div class="col-4">
+                            <div class="text-primary">
+                                <i class="fas fa-history fa-2x mb-2"></i>
+                                <p class="small mb-0">訂單紀錄</p>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-success">
+                                <i class="fas fa-star fa-2x mb-2"></i>
+                                <p class="small mb-0">積點回饋</p>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="text-warning">
+                                <i class="fas fa-gift fa-2x mb-2"></i>
+                                <p class="small mb-0">專屬優惠</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

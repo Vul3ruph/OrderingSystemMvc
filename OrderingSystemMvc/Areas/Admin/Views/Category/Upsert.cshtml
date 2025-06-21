@@ -11,7 +11,7 @@
     @Html.ValidationSummary(true, "", new { @class = "text-danger" })
 
     <form asp-action="Upsert">
-        <input type="hidden" asp-for="Id" /> @* 必填！讓 ASP.NET 知道是新增還是修改 *@
+        <input type="hidden" asp-for="Id" /> 
 
         <div class="mb-3">
             <label asp-for="Name" class="form-label"></label>
@@ -24,7 +24,7 @@
             <input asp-for="SortOrder" class="form-control" />
             <span asp-validation-for="SortOrder" class="text-danger"></span>
         </div>
-
+      
         <button type="submit" class="btn btn-success">💾 儲存</button>
         <a asp-action="Index" class="btn btn-secondary">返回</a>
     </form>

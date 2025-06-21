@@ -19,18 +19,16 @@ namespace OrderingSystemMvc.Areas.Admin.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
-        // GET: MenuItem
+       
         public async Task<IActionResult> Index()
         {
-            ViewData["Title"] = "餐點管理";
-
-            var items = await _context.MenuItems
-                .Include(m => m.Category)
-                .OrderBy(m => m.SortOrder)
-                .ThenBy(m => m.Name)
+            var menuItems = await _context.MenuItems
+                .Include(m => m.Category) // 這樣 CategoryId = 0 的項目 Category 會是 null
+                .OrderBy(m => m.CategoryId == 0 ? "未分類" : m.Category.Name)
+                .ThenBy(m => m.SortOrder)
                 .ToListAsync();
 
-            return View(items);
+            return View(menuItems);
         }
 
         // GET: Upsert
@@ -68,118 +66,92 @@ namespace OrderingSystemMvc.Areas.Admin.Controllers
             }
         }
 
+        // 更新 Upsert 方法以處理選項關聯
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Upsert(MenuItem item, IFormFile? formFile)
+        public async Task<IActionResult> Upsert(MenuItem item, IFormFile? formFile, List<int>? SelectedOptionIds)
         {
             if (ModelState.IsValid)
             {
+                using var transaction = await _context.Database.BeginTransactionAsync();
                 try
                 {
                     var isCreate = item.Id == 0;
 
-                    // 處理圖片上傳
+                    // 處理圖片上傳（你現有的代碼）
                     if (formFile != null && formFile.Length > 0)
                     {
-                        var imageUrl = await UploadImage(formFile);
-                        if (!string.IsNullOrEmpty(imageUrl))
-                        {
-                            // 如果是編輯且有舊圖片，先刪除舊圖片
-                            if (!isCreate && !string.IsNullOrEmpty(item.ImageUrl))
-                            {
-                                DeleteImage(item.ImageUrl);
-                            }
-                            item.ImageUrl = imageUrl;
-                        }
+                        // 你的圖片上傳邏輯
+                         var imageUrl = await UploadImage(formFile);
+                         item.ImageUrl = imageUrl;
                     }
 
-                    // 資料庫操作
+                    // 餐點基本資訊處理
                     if (isCreate)
-                    {                   
-                        _context.MenuItems.Add(item);
-                      
-                    }
-                    else
+                    { 
+                        if (item.SortOrder == 0)
+                        {
+                            var maxSortOrder = await _context.MenuItems
+                                .Where(m => m.CategoryId == item.CategoryId)
+                                .MaxAsync(m => (int?)m.SortOrder) ?? 0;
+                            item.SortOrder = maxSortOrder + 1;
+                        }
+
+                    _context.MenuItems.Add(item);
+                    await _context.SaveChangesAsync(); // 先保存以獲取 ID
+                }
+                     else
+                {
+                    var existingItem = await _context.MenuItems.FindAsync(item.Id);
+                    if (existingItem == null)
                     {
-                        // 編輯操作
-                        var existingItem = await _context.MenuItems.FindAsync(item.Id);
-                        if (existingItem == null)
-                        {
-                            TempData["ErrorMessage"] = "餐點不存在";
-                            return RedirectToAction(nameof(Index));
-                        }
-
-                        // 更新屬性
-                        existingItem.Name = item.Name;
-                        existingItem.Description = item.Description;
-                        existingItem.Price = item.Price;
-                        existingItem.CategoryId = item.CategoryId;
-                        existingItem.SortOrder = item.SortOrder;
-                        existingItem.IsAvailable = item.IsAvailable;
-                       
-
-                        // 只有在有新圖片時才更新圖片URL
-                        if (formFile != null && formFile.Length > 0 && !string.IsNullOrEmpty(item.ImageUrl))
-                        {
-                            existingItem.ImageUrl = item.ImageUrl;
-                        }
-
-                        _context.MenuItems.Update(existingItem);
-                        TempData["SuccessMessage"] = "餐點更新成功";
+                        TempData["ToastrType"] = "error";
+                        TempData["ToastrMessage"] = "餐點不存在";
+                        return RedirectToAction(nameof(Index));
                     }
-                   
-                    await _context.SaveChangesAsync();
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                            
-                        TempData["ErrorMessage"] = "更新衝突，請重新嘗試";
-                        throw;
-                    
-                }
-                catch (Exception ex)
-                {
-                    TempData["ErrorMessage"] = $"操作失敗: {ex.Message}";
 
-                    // 記錄詳細錯誤到日誌
-                    // _logger.LogError(ex, "MenuItem Upsert failed for item: {ItemId}", item.Id);
+                    // 更新餐點資訊
+                    existingItem.Name = item.Name;
+                    existingItem.Description = item.Description;
+                    existingItem.Price = item.Price;
+                    existingItem.CategoryId = item.CategoryId;
+                    existingItem.SortOrder = item.SortOrder;
+                    existingItem.IsAvailable = item.IsAvailable;
+
+                    if (!string.IsNullOrEmpty(item.ImageUrl))
+                    {
+                        existingItem.ImageUrl = item.ImageUrl;
+                    }
+
+                    _context.MenuItems.Update(existingItem);
                 }
+
+                // 處理選項關聯
+                await UpdateMenuItemOptions(item.Id, SelectedOptionIds ?? new List<int>());
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                TempData["ToastrType"] = "success";
+                TempData["ToastrMessage"] = isCreate ? "餐點新增成功！" : "餐點更新成功！";
+
+                return RedirectToAction(nameof(Index));
             }
-            else
-            {
-                // ModelState 驗證失敗，顯示錯誤訊息
-                var errors = ModelState
-                    .Where(x => x.Value.Errors.Count > 0)
-                    .Select(x => new { Field = x.Key, Errors = x.Value.Errors.Select(e => e.ErrorMessage) });
+        catch (Exception ex)
+        {
+                await transaction.RollbackAsync();
+                System.Diagnostics.Debug.WriteLine($"Upsert Error: {ex.Message}");
 
-                TempData["ErrorMessage"] = "表單驗證失敗，請檢查輸入內容";
-
-                // 可選：將具體錯誤記錄到日誌
-                // foreach (var error in errors)
-                // {
-                //     _logger.LogWarning("Validation error in field {Field}: {Errors}", 
-                //         error.Field, string.Join(", ", error.Errors));
-                // }
+                TempData["ToastrType"] = "error";
+                TempData["ToastrMessage"] = $"操作失敗: {ex.Message}";
             }
-
-            // 如果驗證失敗或發生錯誤，重新載入頁面
-            ViewData["Title"] = item.Id == 0 ? "新增餐點" : "編輯餐點";
-
-            // 設定麵包屑
-            ViewBag.BreadcrumbItems = new List<dynamic>
-    {
-        new { Title = "餐點管理", Url = Url.Action("Index", "MenuItem", new { area = "Admin" }) },
-        new { Title = item.Id == 0 ? "新增餐點" : "編輯餐點", Url = (string)null }
-    };
-
-            ViewBag.Categories = await _context.Categories
-                .OrderBy(c => c.SortOrder)
-                .ThenBy(c => c.Name)
-                .ToListAsync();
-
-            return View(item);
         }
+
+        // 重新載入頁面資料
+        await LoadUpsertPageData(item);
+    return View(item);
+}
+
 
         // 輔助方法：檢查 MenuItem 是否存在
         private bool MenuItemExists(int id)
@@ -299,6 +271,91 @@ namespace OrderingSystemMvc.Areas.Admin.Controllers
             }
         }
 
+        //API
+        [HttpGet]
+        public async Task<IActionResult> GetAvailableOptions()
+        {
+            try
+            {
+                var options = await _context.Options
+                    .Include(o => o.OptionItems)
+                    .OrderBy(o => o.SortOrder)
+                    .ThenBy(o => o.Name)
+                    .Select(o => new
+                    {
+                        Id = o.Id,
+                        Name = o.Name,
+                        IsSingleChoice = o.IsSingleChoice,
+                        SortOrder = o.SortOrder,
+                        OptionItems = o.OptionItems
+                            .OrderBy(oi => oi.Id) // 你的模型沒有 SortOrder，所以用 Id 排序
+                            .Select(oi => new
+                            {
+                                Id = oi.Id,
+                                Name = oi.Name,
+                                Description = "", // 你的模型沒有 Description，所以給空字串
+                                Price = oi.ExtraPrice // 注意：你的欄位是 ExtraPrice
+                            }).ToList()
+                    })
+                    .ToListAsync();
+
+                return Json(options);
+            }
+            catch (Exception ex)
+            {
+                // 記錄錯誤
+                System.Diagnostics.Debug.WriteLine($"GetAvailableOptions Error: {ex.Message}");
+
+                // 返回錯誤信息
+                return Json(new { error = ex.Message });
+            }
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> GetSelectedOptions(int id)
+        {
+            try
+            {
+                if (id == 0)
+                {
+                    // 新增模式，返回空陣列
+                    return Json(new List<object>());
+                }
+
+                // 查詢已選擇的選項
+                var selectedOptions = await _context.MenuItemOptions
+                    .Where(mio => mio.MenuItemId == id)
+                    .Include(mio => mio.Option)
+                    .ThenInclude(o => o.OptionItems)
+                    .Select(mio => new
+                    {
+                        Id = mio.Option.Id,
+                        Name = mio.Option.Name,
+                        IsSingleChoice = mio.Option.IsSingleChoice,
+                        SortOrder = mio.Option.SortOrder,
+                        OptionItems = mio.Option.OptionItems
+                            .OrderBy(oi => oi.Id)
+                            .Select(oi => new
+                            {
+                                Id = oi.Id,
+                                Name = oi.Name,
+                                Description = "", // 你的模型沒有 Description
+                                Price = oi.ExtraPrice // 注意：你的欄位是 ExtraPrice
+                            }).ToList()
+                    })
+                    .ToListAsync();
+
+                return Json(selectedOptions);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetSelectedOptions Error: {ex.Message}");
+                return Json(new { error = ex.Message });
+            }
+        }
+
+
         #region 私有方法
         private async Task<int> GetNextSortOrder()
         {
@@ -371,6 +428,39 @@ namespace OrderingSystemMvc.Areas.Admin.Controllers
                 // 記錄錯誤但不拋出異常
                 Console.WriteLine($"圖片刪除失敗: {ex.Message}");
             }
+        }
+        // 輔助方法：更新餐點選項關聯
+        private async Task UpdateMenuItemOptions(int menuItemId, List<int> selectedOptionIds)
+        {
+            // 移除現有的關聯
+            var existingOptions = await _context.MenuItemOptions
+                .Where(mio => mio.MenuItemId == menuItemId)
+                .ToListAsync();
+
+            _context.MenuItemOptions.RemoveRange(existingOptions);
+
+            // 添加新的關聯
+            if (selectedOptionIds.Any())
+            {
+                var newMenuItemOptions = selectedOptionIds.Select(optionId => new MenuItemOption
+                {
+                    MenuItemId = menuItemId,
+                    OptionId = optionId
+                }).ToList();
+
+                await _context.MenuItemOptions.AddRangeAsync(newMenuItemOptions);
+            }
+        }
+
+        // 輔助方法：載入 Upsert 頁面所需資料
+        private async Task LoadUpsertPageData(MenuItem item)
+        {
+            ViewData["Title"] = item.Id == 0 ? "新增餐點" : "編輯餐點";
+
+            ViewBag.Categories = await _context.Categories
+                .OrderBy(c => c.SortOrder)
+                .ThenBy(c => c.Name)
+                .ToListAsync();
         }
 
         #endregion

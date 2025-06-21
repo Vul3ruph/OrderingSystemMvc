@@ -16,7 +16,16 @@
             @foreach (var cat in Model)
             {
                 <tr>
-                    <td>@cat.Name</td>
+                    <td>
+                        @if (cat.Id == 0 || cat == null)
+                        {
+                            <span class="text-muted">未分類</span>
+                        }
+                        else
+                        {
+                            @cat.Name
+                        }
+                    </td>
                     <td>@cat.SortOrder</td>
                     <td>
                         <a asp-action="Upsert" asp-route-id="@cat.Id" class="btn btn-sm btn-outline-secondary">編輯</a>

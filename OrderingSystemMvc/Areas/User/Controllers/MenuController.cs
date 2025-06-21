@@ -23,12 +23,13 @@ namespace OrderingSystemMvc.Areas.Admin.Controllers
                 .Include(m => m.Category)
                 .Include(m => m.MenuItemOptions)
                     .ThenInclude(mio => mio.Option)
-                        .ThenInclude(o => o.OptionItems)  // 🔧 正確的深層 Include
+                        .ThenInclude(o => o.OptionItems)
                 .Where(m => m.IsAvailable);
+                
 
             if (categoryId.HasValue)
             {
-                itemsQuery = itemsQuery.Where(m => m.CategoryId == categoryId.Value);
+                itemsQuery = itemsQuery.Where(m => m.CategoryId == categoryId.Value).OrderBy(i=>i.SortOrder);
             }
 
             var items = await itemsQuery.ToListAsync();

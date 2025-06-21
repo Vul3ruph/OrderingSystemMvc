@@ -15,6 +15,6 @@ namespace OrderingSystemMvc.Models
         public string ColorClass { get; set; } = "bg-secondary"; // 顏色類別（用於 Bootstrap 標籤）
 
         // 可選：關聯到訂單
-        public ICollection<Order>? Orders { get; set; }
+        public ICollection<Order> Orders { get; set; } = new List<Order>();
     }
 }

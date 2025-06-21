@@ -1,0 +1,336 @@
+﻿/* 餐點選項編輯器樣式 */
+
+/* 左側選項卡片布局調整 */
+.option-card {
+    transition: all 0.3s ease;
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+    .option-card:hover {
+        border-color: #007bff;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,123,255,0.15);
+    }
+
+/* 選項項目容器 - 從上往下垂直排列 */
+.option-items {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.option-item {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin: 0;
+    border-left: 4px solid #007bff;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 45px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.option-item-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.option-item-info {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.option-item-price {
+    flex-shrink: 0;
+    margin-left: 12px;
+    font-weight: bold;
+}
+
+.option-item:hover {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    transform: translateX(4px);
+}
+
+.option-item.single-choice {
+    border-left-color: #28a745;
+    background: linear-gradient(135deg, #f1f8e9 0%, #dcedc8 100%);
+}
+
+    .option-item.single-choice:hover {
+        background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c8 100%);
+    }
+
+.option-item .option-name {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.95em;
+}
+
+.option-item .option-description {
+    color: #6c757d;
+    font-size: 0.85em;
+    margin-top: 2px;
+}
+
+.option-item .option-price {
+    color: #28a745;
+    font-weight: 700;
+    font-size: 0.9em;
+    white-space: nowrap;
+}
+
+    .option-item .option-price.paid {
+        color: #dc3545;
+    }
+
+.remove-option-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    border: none;
+    opacity: 0;
+    transition: all 0.3s ease;
+    font-size: 14px;
+    box-shadow: 0 2px 8px rgba(220,53,69,0.3);
+}
+
+.option-card:hover .remove-option-btn {
+    opacity: 1;
+}
+
+.remove-option-btn:hover {
+    background: linear-gradient(135deg, #c82333 0%, #a71e2a 100%);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(220,53,69,0.4);
+}
+
+.option-type-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+    .option-type-badge.single-choice {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+
+    .option-type-badge.multi-choice {
+        background: linear-gradient(135deg, #17a2b8 0%, #20c997 100%);
+        color: white;
+    }
+
+.option-count-badge {
+    background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7em;
+    font-weight: 600;
+}
+
+.card-header.bg-gradient-primary {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+}
+
+.no-options-message {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 2px dashed #dee2e6;
+    border-radius: 12px;
+    padding: 2rem;
+    text-align: center;
+}
+
+.option-preview-area {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border: 1px solid #90caf9;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+.selected-count-badge {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    font-weight: 600;
+}
+
+/* 圖片上傳和預覽區域樣式 */
+.image-upload-section {
+    min-height: 250px;
+}
+
+.upload-area {
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+    .upload-area:hover {
+        border-color: #007bff;
+        background: #e3f2fd;
+    }
+
+    .upload-area input[type="file"] {
+        margin: 1rem 0;
+        max-width: 100%;
+    }
+
+    .upload-area .fa-cloud-upload-alt {
+        color: #6c757d;
+        transition: color 0.3s ease;
+    }
+
+    .upload-area:hover .fa-cloud-upload-alt {
+        color: #007bff;
+    }
+
+/* 圖片預覽樣式 */
+.image-preview-container {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    max-height: 300px;
+}
+
+.preview-image {
+    width: 100%;
+    height: auto;
+    max-height: 300px;
+    object-fit: cover;
+    display: block;
+}
+
+.image-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.image-preview-container:hover .image-overlay {
+    opacity: 1;
+}
+
+.image-overlay .btn {
+    background: rgba(220, 53, 69, 0.9);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+    .image-overlay .btn:hover {
+        background: rgba(220, 53, 69, 1);
+    }
+
+/* 動畫效果 */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.option-card {
+    animation: slideInUp 0.3s ease-out;
+}
+
+/* 響應式設計 */
+@media (max-width: 1200px) {
+    /* 在較小螢幕上保持垂直排列 */
+    .option-items {
+        gap: 5px;
+    }
+
+    .option-item {
+        padding: 8px 12px;
+        min-height: 40px;
+    }
+}
+
+@media (max-width: 768px) {
+    /* 在小屏幕上保持垂直排列，調整間距 */
+    .option-items {
+        gap: 4px;
+    }
+
+    .option-card {
+        margin-bottom: 1rem;
+    }
+
+    .option-item {
+        padding: 8px 10px;
+        min-height: 38px;
+    }
+
+    .remove-option-btn {
+        opacity: 1;
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 576px) {
+    /* 在更小的屏幕上優化顯示 */
+    .option-item {
+        padding: 6px 10px;
+        font-size: 0.9em;
+        min-height: 35px;
+    }
+
+    .option-name {
+        font-size: 0.9em !important;
+    }
+
+    .option-price {
+        font-size: 0.8em !important;
+    }
+
+    .option-items {
+        gap: 3px;
+    }
+}

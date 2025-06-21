@@ -14,61 +14,140 @@
 
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/login.css" asp-append-version="true" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" rel="stylesheet" />
-    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
 
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
+        <nav class="navbar navbar-expand-sm navbar-custom mb-3">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="User" asp-controller="Home" asp-action="Index">OrderingSystemMvc</a>
+                <a class="navbar-brand" asp-area="User" asp-controller="Home" asp-action="Index">
+                    <i class="fas fa-utensils me-2"></i>美味點餐
+                </a>
+
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
                         data-bs-target=".navbar-collapse" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
+
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <!-- 👤 前台區塊 (User) -->
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="User" asp-controller="Menu" asp-action="Index">點餐</a>
+                            <a class="nav-link" asp-area="User" asp-controller="Menu" asp-action="Index">
+                                <i class="fas fa-list-ul me-1"></i>點餐選單
+                            </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="User" asp-controller="Orders" asp-action="Index">📜 訂單紀錄</a>
+                            <a class="nav-link" asp-area="User" asp-controller="Orders" asp-action="Index">
+                                <i class="fas fa-receipt me-1"></i>訂單紀錄
+                            </a>
                         </li>
 
                         <!-- 🛠️ 後台區塊 (Admin) -->
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">後台管理</a>
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                                <i class="fas fa-cogs me-1"></i>後台管理
+                            </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" asp-area="Admin" asp-controller="MenuItem" asp-action="Index">菜單管理</a></li>
-                                <li><a class="dropdown-item" asp-area="Admin" asp-controller="Categories" asp-action="Index">分類管理</a></li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-area="Admin" asp-controller="Options" asp-action="Index">選項管理</a>
+                                <li>
+                                    <a class="dropdown-item" asp-area="Admin" asp-controller="MenuItem" asp-action="Index">
+                                        <i class="fas fa-hamburger me-2"></i>菜單管理
+                                    </a>
                                 </li>
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-area="Admin" asp-controller="OptionItems" asp-action="Index">選項細項</a>
+                                <li>
+                                    <a class="dropdown-item" asp-area="Admin" asp-controller="Categories" asp-action="Index">
+                                        <i class="fas fa-tags me-2"></i>分類管理
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-area="Admin" asp-controller="Options" asp-action="Index">
+                                        <i class="fas fa-sliders-h me-2"></i>選項管理
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" asp-area="Admin" asp-controller="OptionItems" asp-action="Index">
+                                        <i class="fas fa-list me-2"></i>選項細項
+                                    </a>
                                 </li>
                             </ul>
                         </li>
                     </ul>
 
-                    <!-- 🛒 購物車 -->
-                    <ul class="navbar-nav">
-                        <li class="nav-item">
-                            <a href="/Cart" class="btn btn-outline-primary position-relative">
-                                🛒 購物車
-                                <span id="cart-count" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                    0
-                                </span>
-                            </a>
+                    <!-- 🛒 購物車 + 會員功能 -->
+                    <div class="user-section">
+                        <!-- 購物車 -->
+                        <a href="/User/Cart" class="cart-btn">
+                            <i class="fas fa-shopping-cart me-2"></i>
+                            購物車
+                            <span id="cart-count" class="cart-badge">@cartCount</span>
+                        </a>
 
-                        </li>
-                    </ul>
+                        <!-- 會員功能 -->
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <!-- 已登入：顯示會員選單 -->
+                            <div class="dropdown">
+                                <a class="user-dropdown dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                    <i class="fas fa-user-circle me-2"></i>
+                                    @(User.Identity.Name?.Split('@')[0] ?? "會員")
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" asp-area="User" asp-controller="Account" asp-action="Profile">
+                                            <i class="fas fa-user-edit me-2"></i>個人資料
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" asp-area="User" asp-controller="Orders" asp-action="Index">
+                                            <i class="fas fa-history me-2"></i>我的訂單
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <form asp-area="User" asp-controller="Account" asp-action="Logout" method="post" class="d-inline w-100">
+                                            <button type="submit" class="dropdown-item text-danger w-100 text-start" style="border: none; background: none;">
+                                                <i class="fas fa-sign-out-alt me-2"></i>登出
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        }
+                        else
+                        {
+                            <!-- 未登入：顯示登入/註冊按鈕 -->
+                            <a class="login-btn" asp-area="User" asp-controller="Account" asp-action="Login">
+                                <i class="fas fa-sign-in-alt me-1"></i>登入
+                            </a>
+                            <a class="register-btn" asp-area="User" asp-controller="Account" asp-action="Register">
+                                <i class="fas fa-user-plus me-1"></i>註冊
+                            </a>
+                        }
+                    </div>
                 </div>
             </div>
         </nav>
     </header>
+
+    <!-- 全域通知訊息 -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show m-0" role="alert">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show m-0" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
     <div class="container">
         <main role="main" class="pb-3">
@@ -82,7 +161,6 @@
         </div>
     </footer>
 
-
     <!-- ✅ Toast 顯示區域 -->
     <div aria-live="polite" aria-atomic="true" class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
         <div id="toast" class="toast align-items-center text-white bg-success border-0" role="alert">
@@ -95,6 +173,17 @@
         </div>
     </div>
 
+    <!-- 主要 Toast（您原本的） -->
+    <div aria-live="polite" aria-atomic="true" class="position-fixed bottom-0 start-50 translate-middle-x p-3" style="z-index: 9998">
+        <div id="mainToast" class="toast align-items-center text-white bg-info border-0" role="alert">
+            <div class="d-flex">
+                <div class="toast-body" id="toast-body-text">
+                    訊息內容
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        </div>
+    </div>
 
     <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
@@ -103,8 +192,9 @@
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
     <script>
+        // 您原本的 Toast 邏輯
         window.onload = () => {
             const toastText = @Html.Raw(toastMessage);
             if (toastText && toastText !== "null" && toastText !== "") {
@@ -114,6 +204,53 @@
                 toast.show();
             }
         };
+
+        // 購物車數量同步和動畫
+        $(document).ready(function() {
+            // 購物車數量變化時的動畫
+            function animateCartCount() {
+                $('#cart-count').addClass('animate__animated animate__pulse');
+                setTimeout(() => {
+                    $('#cart-count').removeClass('animate__animated animate__pulse');
+                }, 1000);
+            }
+
+            // 監聽購物車數量變化
+            var observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.target.id === 'cart-count') {
+                        animateCartCount();
+                    }
+                });
+            });
+
+            var cartCountElement = document.getElementById('cart-count');
+            if (cartCountElement) {
+                observer.observe(cartCountElement, {
+                    childList: true,
+                    characterData: true,
+                    subtree: true
+                });
+            }
+
+            // 登出確認
+            $('form[action*="Logout"] button').on('click', function(e) {
+                if (!confirm('確定要登出嗎？')) {
+                    e.preventDefault();
+                }
+            });
+
+            // 平滑滾動效果
+            $('a[href^="#"]').on('click', function(event) {
+                var target = $(this.getAttribute('href'));
+                if( target.length ) {
+                    event.preventDefault();
+                    $('html, body').stop().animate({
+                        scrollTop: target.offset().top - 70
+                    }, 1000);
+                }
+            });
+        });
     </script>
 
     @await RenderSectionAsync("Scripts", required: false)

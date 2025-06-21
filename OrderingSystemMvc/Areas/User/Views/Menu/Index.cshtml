@@ -1,10 +1,14 @@
 ﻿@model IEnumerable<OrderingSystemMvc.Models.MenuItem>
-
+@inject IHttpContextAccessor HttpContextAccessor
 @{
     ViewData["Title"] = "點餐選單";
     var categories = ViewBag.Categories as List<OrderingSystemMvc.Models.Category>;
     var selectedCategoryId = ViewBag.SelectedCategoryId as int?;
 }
+@{
+    var cart = OrderingSystemMvc.Helpers.CartHelper.GetCart(HttpContextAccessor.HttpContext!);
+}
+
 
 <div class="container py-4">
     <h2 class="text-center mb-4">🍽️ 請選擇餐點</h2>
@@ -24,32 +28,40 @@
     <div class="row row-cols-1 row-cols-md-3 g-4">
         @foreach (var item in Model)
         {
+            var optionGroups = item.MenuItemOptions?
+            .Where(mo => mo.Option != null)
+            .GroupBy(mo => mo.Option!)
+            .ToList();
+
             <div class="col">
                 <div class="card h-100 menu-card">
+
                     <img src="@(@item.ImageUrl ?? "https://via.placeholder.com/400x200?text=No+Image")"
                          class="card-img-top rounded-top" style="height: 200px; object-fit: cover;"
-                         alt=@item.Name />
+                         alt="@item.Name" />
+
                     <div class="card-body d-flex flex-column justify-content-between">
                         <h5 class="card-title">@item.Name</h5>
                         <p class="card-text text-muted mb-2">@item.Description</p>
-                        @if (item.MenuItemOptions != null && item.MenuItemOptions.Any())
-                        {
-                            var optionGroups = item.MenuItemOptions
-                            .Where(mo => mo.Option != null)
-                            .GroupBy(mo => mo.Option!)
-                            .ToList();
 
+                        @if (optionGroups != null && optionGroups.Any())
+                        {
                             foreach (var group in optionGroups)
                             {
                                 <div class="mb-2">
-                                    <strong>@group.Key.Name：</strong>
+                                    <strong>@group.Key.Name：</strong><br />
 
                                     @if (group.Key.IsSingleChoice)
                                     {
                                         foreach (var opt in group.Key.OptionItems!)
                                         {
-                                            <label class="btn btn-outline-secondary btn-sm me-1">
-                                                <input type="radio" name="option_@item.Id@group.Key.Id" value="@opt.Id" autocomplete="off" /> @opt.Name
+                                            <label class="btn btn-outline-secondary btn-sm me-1 mb-1">
+                                                <input type="radio" name="option_@item.Id@group.Key.Id" value="@opt.Id" autocomplete="off" />
+                                                @opt.Name
+                                                @if (opt.ExtraPrice > 0)
+                                                {
+                                                    <span>(+@opt.ExtraPrice.ToString("C0"))</span>
+                                                }
                                             </label>
                                         }
                                     }
@@ -57,25 +69,25 @@
                                     {
                                         foreach (var opt in group.Key.OptionItems!)
                                         {
-                                            <label class="btn btn-outline-secondary btn-sm me-1">
-                                                <input type="checkbox" name="option_@item.Id@group.Key.Id" value="@opt.Id" autocomplete="off" /> @opt.Name
+                                            <label class="btn btn-outline-secondary btn-sm me-1 mb-1">
+                                                <input type="checkbox" name="option_@item.Id@group.Key.Id" value="@opt.Id" autocomplete="off" />
+                                                @opt.Name
+                                                @if (opt.ExtraPrice > 0)
+                                                {
+                                                    <span>(+@opt.ExtraPrice.ToString("C0"))</span>
+                                                }
                                             </label>
                                         }
                                     }
                                 </div>
                             }
                         }
-                        <div class="d-flex justify-content-between align-items-center">
+
+                        <div class="d-flex justify-content-between align-items-center mt-2">
                             <span class="fw-bold text-danger">$@item.Price</span>
-                            <form id="csrf-form" style="display:none">
-                                @Html.AntiForgeryToken()
-                            </form>
-                            <button class="btn btn-sm btn-add-to-cart"
-                                    data-id="@item.Id">
+                            <button type="button" class="btn btn-sm btn-primary btn-add-to-cart" data-menu-id="@item.Id">
                                 加入購物車
                             </button>
-
-
                         </div>
                     </div>
                 </div>
@@ -83,38 +95,115 @@
         }
     </div>
 </div>
-@section Scripts {
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script>
-        $(function () {
-            $(".btn-add-to-cart").click(function () {
-                var menuItemId = $(this).data("id");
 
-                $.ajax({
-                    url: '/User/Cart/Add',
-                    method: 'POST',
-                    headers: {
-                        "RequestVerificationToken": $('input[name="__RequestVerificationToken"]').val()
-                    },
-                    data: { menuItemId: menuItemId },
-                    success: function (response) {
-                        // ✅ 顯示成功提示
-                        $("#toast-body").text(response.message);
-                        var toast = new bootstrap.Toast(document.getElementById("toast"));
-                        toast.show();
+<!-- Toast 顯示區域 -->
+<div aria-live="polite" aria-atomic="true" class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999">
+    <div id="toast" class="toast align-items-center text-white bg-success border-0" role="alert">
+        <div class="d-flex">
+            <div class="toast-body" id="toast-body">
+                ✅ 加入成功
+            </div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+    </div>
+</div>
 
-                        // ✅ 更新購物車數字
-                        $("#cart-count").text(response.cartCount);
-                    },
-                    error: function () {
-                        $("#toast-body").text("❌ 加入購物車失敗");
-                        var toast = new bootstrap.Toast(document.getElementById("toast"));
-                        toast.show();
-                    }
-                });
+<!-- 確保在頁面最底部載入 JavaScript -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    console.log("腳本開始載入...");
+
+    // 等待 DOM 完全載入
+    $(document).ready(function() {
+        console.log("jQuery 已載入，DOM 已準備好");
+        console.log("jQuery 版本:", $.fn.jquery);
+
+        // 檢查按鈕是否存在
+        console.log("找到的按鈕數量:", $(".btn-add-to-cart").length);
+
+        // 使用事件委派的方式綁定事件
+        $(document).on('click', '.btn-add-to-cart', function(e) {
+            console.log("按鈕被點擊了！");
+
+            // 阻止任何預設行為
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+
+            var $button = $(this);
+            var menuItemId = $button.data('menu-id');
+
+            console.log("餐點 ID:", menuItemId);
+
+            // 收集選項
+            var selectedOptionItemIds = [];
+            var card = $button.closest(".menu-card");
+
+            card.find("input[type='checkbox']:checked, input[type='radio']:checked").each(function () {
+                var value = parseInt($(this).val());
+                selectedOptionItemIds.push(value);
+                console.log("選中的選項:", value);
             });
+
+            console.log("所有選中的選項:", selectedOptionItemIds);
+
+            // 禁用按鈕
+            $button.prop('disabled', true).text('處理中...');
+
+            // 發送 AJAX 請求
+            $.ajax({
+                url: '/User/Cart/Add',
+                method: 'POST',
+                data: {
+                    menuItemId: menuItemId,
+                    selectedOptionItemIds: selectedOptionItemIds,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                dataType: 'json'
+            })
+            .done(function(response) {
+                console.log("AJAX 成功回應:", response);
+
+                // 更新購物車數量
+                if (response.cartCount !== undefined) {
+                    $("#cart-count").text(response.cartCount);
+                    console.log("更新購物車數量為:", response.cartCount);
+                }
+
+                // 顯示訊息
+                var message = response.message || "已加入購物車";
+                $("#toast-body").text(message);
+
+                // 顯示 Toast
+                try {
+                    var toastEl = document.getElementById('toast');
+                    var toast = new bootstrap.Toast(toastEl);
+                    toast.show();
+                } catch (ex) {
+                    console.log("Toast 顯示失敗，使用 alert:", ex);
+                    alert(message);
+                }
+            })
+            .fail(function(xhr, status, error) {
+                console.error("AJAX 失敗:");
+                console.error("狀態:", status);
+                console.error("錯誤:", error);
+                console.error("回應文字:", xhr.responseText);
+                console.error("狀態碼:", xhr.status);
+
+                alert("❌ 加入購物車失敗，請稍後再試\n錯誤: " + error);
+            })
+            .always(function() {
+                // 恢復按鈕
+                $button.prop('disabled', false).text('加入購物車');
+            });
+
+            // 強制返回 false
+            return false;
         });
-    </script>
-}
 
+        console.log("事件綁定完成");
+    });
+</script>
 
+@Html.AntiForgeryToken()

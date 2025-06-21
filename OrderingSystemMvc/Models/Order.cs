@@ -9,16 +9,18 @@ namespace OrderingSystemMvc.Models
         // ─── 使用者 ──────────────────────────────
         public string UserId { get; set; } = string.Empty;
         public ApplicationUser? User { get; set; }
-        // ─── 時間、狀態 ──────────────────────────
+        // ─── 時間 ──────────────────────────
         public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public int OrderStatusId { get; set; }
 
-        [ForeignKey("OrderStatusId")]
-        public OrderStatus Status { get; set; }
         // ─── 金額 ────────────────────────────────
         public decimal TotalAmount { get; set; }
 
+        // ─── 狀態 ────────────────────────────────
+        public int OrderStatusId { get; set; }
+        [ForeignKey("OrderStatusId")]
+        public OrderStatus Status { get; set; }
         // ─── 明細 ────────────────────────────────
+
         public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
     }
 }

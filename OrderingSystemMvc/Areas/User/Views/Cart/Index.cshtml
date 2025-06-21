@@ -1,78 +1,262 @@
-﻿@model List<OrderingSystemMvc.Models.CartItem>
+﻿@using OrderingSystemMvc.Helpers
+
+@model List<OrderingSystemMvc.Models.CartItem>
 @{
     ViewData["Title"] = "我的購物車";
     var total = ViewBag.Total as decimal? ?? 0;
+    var isLoggedIn = ViewBag.IsLoggedIn as bool? ?? false;
 }
 
 <div class="container py-4 page-section">
     <h2 class="text-center mb-4">🛒 我的購物車</h2>
 
-
-
-    @if (!Model.Any())
+    <!-- 會員登入提示 -->
+    @if (!isLoggedIn)
     {
-        <p>目前購物車是空的喔！</p>
+        <div class="alert alert-info border-0 mb-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h6 class="mb-1">
+                        <i class="fas fa-info-circle me-2"></i>建議您先登入會員
+                    </h6>
+                    <p class="mb-0 small">登入後可查看訂單狀態、享受會員優惠，並管理您的訂單紀錄</p>
+                </div>
+                <div class="col-md-4 text-md-end mt-2 mt-md-0">
+                    <a asp-area="User" asp-controller="Account" asp-action="Login" class="btn btn-primary btn-sm me-2">
+                        <i class="fas fa-sign-in-alt me-1"></i>立即登入
+                    </a>
+                    <a asp-area="User" asp-controller="Account" asp-action="Register" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-user-plus me-1"></i>註冊會員
+                    </a>
+                </div>
+            </div>
+        </div>
     }
     else
     {
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>品項</th>
-                    <th>單價</th>
-                    <th>數量</th>
-                    <th>小計</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model)
-                {
-                    <tr>
-                        <td>@item.Name</td>
-                        <td>$@item.Price</td>
-                        <td>
-                            <form method="post" asp-action="Subtract" asp-route-id="@item.MenuItemId" class="d-inline">
-                                <button class="btn btn-sm btn-outline-secondary">-</button>
-                            </form>
-                            @item.Quantity
-                            <form method="post" asp-action="Add" asp-route-id="@item.MenuItemId" class="d-inline">
-                                <button class="btn btn-sm btn-outline-secondary">+</button>
-                            </form>
+        <div class="alert alert-success border-0 mb-4">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h6 class="mb-1">
+                        <i class="fas fa-user-check me-2"></i>歡迎回來，@User.Identity?.Name
+                    </h6>
+                    <p class="mb-0 small">您的訂單將會記錄在會員帳戶中，方便日後查詢</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <a asp-area="User" asp-controller="Account" asp-action="Profile" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-user me-1"></i>會員中心
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
 
-                        </td>
-                        <td>$@(item.Price * item.Quantity)</td>
-                        <td>
-                            <form method="post" asp-action="Remove" asp-route-id="@item.MenuItemId">
-                                <button class="btn btn-sm btn-outline-danger">移除</button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-shopping-cart fa-4x text-muted mb-3"></i>
+            <h4 class="text-muted">目前購物車是空的喔！</h4>
+            <p class="text-muted mb-4">還沒有選擇任何餐點</p>
+            <a asp-area="User" asp-controller="Menu" asp-action="Index" class="btn btn-primary btn-lg">
+                <i class="fas fa-utensils me-2"></i>開始點餐
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow-sm">
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="35%">品項</th>
+                            <th width="12%">單價</th>
+                            <th width="20%">數量</th>
+                            <th width="13%">加購金額</th>
+                            <th width="12%">小計</th>
+                            <th width="8%">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                        {
+                                            <img src="@item.ImageUrl" alt="@item.Name"
+                                                 class="rounded me-3" style="width: 50px; height: 50px; object-fit: cover;" />
+                                        }
+                                        <div>
+                                            <div class="fw-semibold">@item.Name</div>
+                                            @if (item.SelectedOptionItemIds?.Any() == true)
+                                            {
+                                                <div class="text-muted small">
+                                                    <i class="fas fa-plus-circle me-1"></i>
+                                                    @string.Join("、", item.SelectedOptionItemIds
+                                                             .Where(id => StaticData.OptionItemDict.ContainsKey(id))
+                                                             .Select(id => StaticData.OptionItemDict[id].Name))
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
 
-        <h4 class="text-end">總金額：<strong class="text-danger">$@total</strong></h4>
+                                <td class="align-middle">
+                                    <span class="fw-bold text-primary">$@item.Price</span>
+                                </td>
 
-        <form method="post" asp-action="Checkout" class="text-end mt-3">
-            <button type="submit" class="btn btn-success">✅ 結帳送出</button>
-        </form>
+                                <td class="align-middle">
+                                    <div class="d-flex align-items-center">
+                                        <!-- 減少數量按鈕 -->
+                                        <form method="post" asp-action="Subtract" asp-route-id="@item.MenuItemId" class="me-2">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary"
+                                                    onclick="return confirm('確定要減少數量嗎？')">
+                                                <i class="fas fa-minus"></i>
+                                            </button>
+                                        </form>
+
+                                        <span class="fw-bold mx-2">@item.Quantity</span>
+
+                                        <!-- 增加數量按鈕 - 修正版本 -->
+                                        <form method="post" asp-action="Add" class="ms-2">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="menuItemId" value="@item.MenuItemId" />
+                                            @if (item.SelectedOptionItemIds?.Any() == true)
+                                            {
+                                                @foreach (var optionId in item.SelectedOptionItemIds)
+                                                {
+                                                    <input type="hidden" name="selectedOptionItemIds" value="@optionId" />
+                                                }
+                                            }
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+
+                                <td class="align-middle">
+                                    @if (item.ExtraTotal > 0)
+                                    {
+                                        <span class="text-warning fw-semibold">+$@item.ExtraTotal</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">無</span>
+                                    }
+                                </td>
+
+                                <td class="align-middle">
+                                    @{
+                                        var subtotal = (item.Price + item.ExtraTotal) * item.Quantity;
+                                    }
+                                    <span class="fw-bold text-success">$@subtotal</span>
+                                </td>
+
+                                <td class="align-middle">
+                                    <form method="post" asp-action="Remove" asp-route-id="@item.MenuItemId">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="btn btn-sm btn-outline-danger"
+                                                onclick="return confirm('確定要移除此商品嗎？')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 總計區域 -->
+        <div class="row mt-4">
+            <div class="col-md-8">
+                <div class="card border-info">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="fas fa-info-circle me-2"></i>訂單資訊
+                        </h6>
+                        <div class="row">
+                            <div class="col-6">
+                                <p class="mb-1 small text-muted">商品數量：</p>
+                                <p class="fw-bold">@Model.Sum(x => x.Quantity) 項</p>
+                            </div>
+                            <div class="col-6">
+                                <p class="mb-1 small text-muted">預計等候：</p>
+                                <p class="fw-bold text-warning">15-20 分鐘</p>
+                            </div>
+                        </div>
+
+                        @if (!isLoggedIn)
+                        {
+                            <div class="mt-3 p-2 bg-light rounded">
+                                <small class="text-muted">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    登入會員可享有積點回饋及查看訂單紀錄
+                                </small>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card border-success">
+                    <div class="card-body text-center">
+                        <h6 class="card-title">
+                            <i class="fas fa-calculator me-2"></i>結帳總計
+                        </h6>
+                        <hr>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>商品金額：</span>
+                            <span>$@total</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>服務費：</span>
+                            <span class="text-success">免費</span>
+                        </div>
+                        <hr>
+                        <h4 class="text-danger mb-3">
+                            總金額：<strong>$@total</strong>
+                        </h4>
+
+                        <form method="post" asp-action="Checkout">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-success btn-lg w-100 mb-2"
+                                    onclick="return confirm('確定要送出訂單嗎？')">
+                                <i class="fas fa-credit-card me-2"></i>結帳送出
+                            </button>
+                        </form>
+
+                        <a asp-area="User" asp-controller="Menu" asp-action="Index" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-arrow-left me-2"></i>繼續購物
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
     }
 </div>
+
 @section Scripts {
     <script>
-        $('.add-btn').click(function () {
-            const form = $(this).closest('.add-form');
-            const id = form.data('id');
+        $(document).ready(function() {
+            // 確保表單提交時不會被重複點擊
+            $('form').on('submit', function() {
+                var $form = $(this);
+                var $button = $form.find('button[type="submit"]');
 
-            $.post('/User/Cart/Add', { id }, function (res) {
-                if (res.success) {
-                    toastr.success(res.message);
-                    // 你可以選擇不 reload，而是改 DOM 呈現數量（進階）
-                    setTimeout(() => location.reload(), 500); // 重整讓數量與總金額更新
-                } else {
-                    toastr.error(res.message);
-                }
+                // 暫時禁用按鈕
+                $button.prop('disabled', true);
+
+                // 2秒後重新啟用（防止網路慢時無法操作）
+                setTimeout(function() {
+                    $button.prop('disabled', false);
+                }, 2000);
             });
         });
     </script>

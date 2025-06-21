@@ -1,9 +1,139 @@
 ﻿@{
-    ViewData["Title"] = "結帳成功";
+    ViewData["Title"] = "訂單成功";
+    var orderId = ViewBag.OrderId as int?;
+    var isLoggedIn = ViewBag.IsLoggedIn as bool? ?? false;
 }
 
-<div class="container py-4 page-section text-center">
-    <h2 class="mb-3 text-success">🎉 結帳成功！</h2>
-    <p>我們已收到您的訂單，感謝您的購買！</p>
-    <a asp-controller="Menu" asp-action="Index" class="btn btn-outline-primary mt-3">返回菜單</a>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="text-center">
+                <!-- 成功圖示 -->
+                <div class="mb-4">
+                    <i class="fas fa-check-circle fa-5x text-success"></i>
+                </div>
+
+                <!-- 成功訊息 -->
+                <h2 class="text-success mb-3">🎉 訂單送出成功！</h2>
+
+                @if (orderId.HasValue)
+                {
+                    <div class="alert alert-success border-0 mb-4">
+                        <h5 class="mb-2">
+                            <i class="fas fa-receipt me-2"></i>訂單編號：#@orderId
+                        </h5>
+                        <p class="mb-0">請記住您的訂單編號，以便查詢訂單狀態</p>
+                    </div>
+                }
+
+                <!-- 下一步提示 -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h6 class="card-title">
+                            <i class="fas fa-info-circle me-2"></i>接下來會發生什麼？
+                        </h6>
+                        <div class="row g-3 mt-2">
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <i class="fas fa-clock fa-2x text-primary mb-2"></i>
+                                    <h6 class="small">1. 訂單確認</h6>
+                                    <p class="small text-muted">我們正在處理您的訂單</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <i class="fas fa-utensils fa-2x text-warning mb-2"></i>
+                                    <h6 class="small">2. 開始製作</h6>
+                                    <p class="small text-muted">廚師開始準備您的餐點</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <i class="fas fa-bell fa-2x text-success mb-2"></i>
+                                    <h6 class="small">3. 完成通知</h6>
+                                    <p class="small text-muted">餐點完成時會通知您</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 會員相關提示 -->
+                @if (!isLoggedIn)
+                {
+                    <div class="alert alert-info border-0 mb-4">
+                        <h6 class="mb-2">
+                            <i class="fas fa-user-plus me-2"></i>建議您註冊會員
+                        </h6>
+                        <p class="mb-3 small">註冊會員可以隨時查看訂單狀態、享受積點回饋及會員專屬優惠</p>
+                        <div>
+                            <a asp-area="User" asp-controller="Account" asp-action="Register" class="btn btn-primary btn-sm me-2">
+                                <i class="fas fa-user-plus me-1"></i>立即註冊
+                            </a>
+                            <a asp-area="User" asp-controller="Account" asp-action="Login" class="btn btn-outline-primary btn-sm">
+                                <i class="fas fa-sign-in-alt me-1"></i>已有帳號，登入
+                            </a>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-success border-0 mb-4">
+                        <h6 class="mb-2">
+                            <i class="fas fa-user-check me-2"></i>會員專屬服務
+                        </h6>
+                        <p class="mb-3 small">您可以在會員中心查看完整的訂單紀錄和狀態</p>
+                        <a asp-area="User" asp-controller="Account" asp-action="Profile" class="btn btn-success btn-sm">
+                            <i class="fas fa-user me-1"></i>前往會員中心
+                        </a>
+                    </div>
+                }
+
+                <!-- 操作按鈕 -->
+                <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                    <a asp-area="User" asp-controller="Menu" asp-action="Index" class="btn btn-primary btn-lg">
+                        <i class="fas fa-utensils me-2"></i>繼續點餐
+                    </a>
+
+                    @if (isLoggedIn)
+                    {
+                        <a href="#" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-history me-2"></i>查看訂單
+                        </a>
+                    }
+                </div>
+
+                <!-- 聯絡資訊 -->
+                <div class="mt-5 pt-4 border-top">
+                    <h6 class="text-muted mb-3">需要協助嗎？</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <i class="fas fa-phone text-primary me-2"></i>
+                                <span class="small">客服專線：(02) 1234-5678</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center justify-content-center">
+                                <i class="fas fa-envelope text-primary me-2"></i>
+                                <span class="small">服務信箱：service@restaurant.com</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<!-- 自動跳轉提示 -->
+<script>
+    $(document).ready(function() {
+        // 5秒後顯示跳轉提示
+        setTimeout(function() {
+            if (confirm('要返回選單繼續點餐嗎？')) {
+                window.location.href = '@Url.Action("Index", "Menu", new { area = "User" })';
+            }
+        }, 5000);
+    });
+</script>
