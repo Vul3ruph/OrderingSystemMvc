@@ -39,7 +39,7 @@
     
     ORM: Entity Framework Core
     
-    Database: SQL Server / MySQL / PostgreSQL
+    Database: SQL Server 
     
     Authentication: ASP.NET Core Identity
     
