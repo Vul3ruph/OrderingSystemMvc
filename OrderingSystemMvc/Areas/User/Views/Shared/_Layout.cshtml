@@ -29,7 +29,7 @@
                 </a>
 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-                        data-bs-target=".navbar-collapse" aria-label="Toggle navigation">
+                data-bs-target=".navbar-collapse" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
@@ -41,11 +41,7 @@
                                 <i class="fas fa-list-ul me-1"></i>點餐選單
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="User" asp-controller="Orders" asp-action="Index">
-                                <i class="fas fa-receipt me-1"></i>訂單紀錄
-                            </a>
-                        </li>
+                       
                         @if (User.IsInRole("Admin"))
                         {
                             <!-- 🛠️ 後台區塊 (Admin) -->
@@ -199,6 +195,41 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
+          $(document).ready(function() {
+        // 配置 Toastr 選項
+        toastr.options = {
+            "closeButton": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000"
+        };
+
+        // 檢查並顯示 Toast 消息
+        @if (TempData["ToastMessage"] != null)
+        {
+            var type = TempData["ToastType"]?.ToString() ?? "error";
+            var message = TempData["ToastMessage"]?.ToString();
+
+            if (type == "success")
+            {
+                <text>toastr.success('@message');</text>
+            }
+            else if (type == "info")
+            {
+                <text>toastr.info('@message');</text>
+            }
+            else if (type == "warning")
+            {
+                <text>toastr.warning('@message');</text>
+            }
+            else
+            {
+                <text>toastr.error('@message');</text>
+            }
+        }
+
         // 您原本的 Toast 邏輯
         window.onload = () => {
             const toastText = @Html.Raw(toastMessage);

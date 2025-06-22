@@ -1,4 +1,4 @@
-﻿@model OrderingSystemMvc.ViewModels.DashboardVM
+﻿  @model OrderingSystemMvc.ViewModels.DashboardVM
 @{
     ViewData["Title"] = "管理員儀表板";
 }
@@ -304,7 +304,7 @@
 
             <div class="row g-4 mt-2">
                 <!-- 第二排 -->
-                <div class="col-lg-4 col-md-6">
+           @*      <div class="col-lg-4 col-md-6">
                     <a href="/Admin/Customer" class="text-decoration-none">
                         <div class="quick-action-btn">
                             <div class="quick-action-icon bg-info">
@@ -355,7 +355,7 @@
                     </a>
                 </div>
             </div>
-
+             *@
             <div class="row g-4 mt-2">
                 <!-- 第三排 -->
                 <div class="col-lg-4 col-md-6">
@@ -375,7 +375,7 @@
                     </a>
                 </div>
 
-                <div class="col-lg-4 col-md-6">
+              @*   <div class="col-lg-4 col-md-6">
                     <a href="/Admin/AdminManagement" class="text-decoration-none">
                         <div class="quick-action-btn">
                             <div class="quick-action-icon" style="background: linear-gradient(135deg, #374151 0%, #1f2937 100%); box-shadow: 0 4px 20px rgba(55, 65, 81, 0.3);">
@@ -390,7 +390,7 @@
                             </div>
                         </div>
                     </a>
-                </div>
+                </div> *@
 
                 <div class="col-lg-4 col-md-6">
                     <form method="post" action="/User/Account/Logout" class="h-100">

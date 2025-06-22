@@ -1,40 +1,225 @@
 ﻿@model List<OrderingSystemMvc.Models.Order>
 
+
 @{
     ViewData["Title"] = "訂單列表";
 }
 
 <div class="container page-section py-4">
-    <h2 class="mb-3">📦 所有訂單</h2>
+    <!-- 清除可能的警告訊息 -->
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            <i class="fas fa-exclamation-triangle me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0">📦 所有訂單</h2>
+        <a asp-area="User" asp-controller="Menu" asp-action="Index" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>新增訂單
+        </a>
+    </div>
 
     @if (!Model.Any())
     {
-        <p>目前沒有訂單紀錄。</p>
+        <!-- 沒有訂單時的顯示 -->
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                <h5 class="text-muted">目前沒有訂單紀錄</h5>
+                <p class="text-muted">開始瀏覽菜單，建立您的第一筆訂單吧！</p>
+                <a asp-area="User" asp-controller="Menu" asp-action="Index" class="btn btn-primary">
+                    <i class="fas fa-utensils me-2"></i>開始點餐
+                </a>
+            </div>
+        </div>
     }
     else
     {
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>訂單編號</th>
-                    <th>建立時間</th>
-                    <th>總金額</th>
-                    <th>操作</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var order in Model)
-                {
-                    <tr>
-                        <td>#@order.Id</td>
-                        <td>@order.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
-                        <td>$@order.TotalAmount</td>
-                        <td>
-                            <a asp-action="Details" asp-route-id="@order.Id" class="btn btn-sm btn-outline-primary">查看明細</a>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+        <!-- 有訂單時的表格顯示 -->
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>訂單編號</th>
+                                <th>建立時間</th>
+                                <th>總金額</th>
+                                <th>狀態</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var order in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>#@order.Id</strong>
+                                    </td>
+                                    <td>
+                                        @order.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold text-success">$@order.TotalAmount.ToString("N0")</span>
+                                    </td>
+                                    <td>
+                                        @if (order.Status != null)
+                                        {
+                                            @switch (order.Status.Code)
+                                            {
+                                                case "PENDING":
+                                                    <span class="badge bg-warning text-dark">@order.Status.Name</span>
+                                                    break;
+                                                case "CONFIRMED":
+                                                    <span class="badge bg-info">@order.Status.Name</span>
+                                                    break;
+                                                case "PREPARING":
+                                                    <span class="badge bg-primary">@order.Status.Name</span>
+                                                    break;
+                                                case "READY":
+                                                case "COMPLETED":
+                                                    <span class="badge bg-success">@order.Status.Name</span>
+                                                    break;
+                                                case "CANCELLED":
+                                                    <span class="badge bg-danger">@order.Status.Name</span>
+                                                    break;
+                                                default:
+                                                    <span class="badge bg-secondary">@order.Status.Name</span>
+                                                    break;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">未知狀態</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Details" asp-route-id="@order.Id"
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye me-1"></i>查看明細
+                                            </a>
+                                            @if (order.Status?.Code == "PENDING")
+                                            {
+                                                <a asp-action="Cancel" asp-route-id="@order.Id"
+                                                   class="btn btn-sm btn-outline-danger"
+                                                   onclick="return confirm('確定要取消此訂單嗎？')">
+                                                    <i class="fas fa-times me-1"></i>取消
+                                                </a>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 訂單統計 -->
+        <div class="row mt-4">
+            <div class="col-md-4">
+                <div class="card text-center border-primary">
+                    <div class="card-body">
+                        <i class="fas fa-shopping-cart fa-2x text-primary mb-2"></i>
+                        <h6 class="card-title">總訂單數</h6>
+                        <h4 class="text-primary">@Model.Count</h4>
+                        <small class="text-muted">筆訂單</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center border-success">
+                    <div class="card-body">
+                        <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
+                        <h6 class="card-title">總消費金額</h6>
+                        <h4 class="text-success">$@Model.Sum(o => o.TotalAmount).ToString("N0")</h4>
+                        <small class="text-muted">累計消費</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-center border-info">
+                    <div class="card-body">
+                        <i class="fas fa-clock fa-2x text-info mb-2"></i>
+                        <h6 class="card-title">最近訂單</h6>
+                        <h4 class="text-info">@(Model.Any() ? Model.First().CreatedAt.ToString("MM/dd") : "無")</h4>
+                        <small class="text-muted">最後下單日期</small>
+                    </div>
+                </div>
+            </div>
+        </div>
     }
 </div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // 確保頁面載入完成後移除任何可能的錯誤警告
+            console.log('訂單頁面載入完成，訂單數量：@Model.Count');
+
+            // 自動隱藏通知訊息
+            setTimeout(function() {
+                $('.alert').fadeOut('slow');
+            }, 5000);
+
+            // 移除任何可能存在的全域錯誤訊息
+            $('.alert').not('.alert-success, .alert-danger').remove();
+
+        @if (Model.Any())
+        {
+            <text>
+                    // 如果有訂單，確保沒有顯示「找不到訂單」的訊息
+                    $('body').find('*:contains("找不到訂訂單")').remove();
+                    $('body').find('*:contains("找不到訂單")').remove();
+            </text>
+        }
+        });
+    </script>
+}
+
+<style>
+    .page-section {
+        min-height: 500px;
+    }
+
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        background-color: #f8f9fa;
+    }
+
+    .btn-group .btn {
+        margin-right: 0.25rem;
+    }
+
+        .btn-group .btn:last-child {
+            margin-right: 0;
+        }
+
+    .card {
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .badge {
+        font-size: 0.875em;
+        padding: 0.5em 0.75em;
+    }
+
+    .table-responsive {
+        border-radius: 0.375rem;
+    }
+</style>

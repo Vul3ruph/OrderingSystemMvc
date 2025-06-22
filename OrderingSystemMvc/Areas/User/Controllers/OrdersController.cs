@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using OrderingSystemMvc.Data;
 using OrderingSystemMvc.Models;
+using OrderingSystemMvc.ViewModels;
 using System.Security.Claims;
 
 namespace OrderingSystemMvc.Areas.User.Controllers
@@ -93,40 +94,8 @@ namespace OrderingSystemMvc.Areas.User.Controllers
         // GET: 取消訂單確認頁面
         public async Task<IActionResult> Cancel(int id)
         {
-            var order = await _context.Orders
-                .Include(o => o.Status)
-                .FirstOrDefaultAsync(o => o.Id == id);
-
-            if (order == null)
-            {
-                TempData["Error"] = "找不到該訂單";
-                return RedirectToAction("Index");
-            }
-
-            // 檢查是否可以取消
-            if (order.Status?.Code != "PENDING")
-            {
-                TempData["Error"] = "此訂單已無法取消";
-                return RedirectToAction("Details", new { id });
-            }
-
-            // 檢查權限
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (order.UserId != userId)
-                {
-                    TempData["Error"] = "您沒有權限操作此訂單";
-                    return RedirectToAction("Index");
-                }
-            }
-            else
-            {
-                TempData["Error"] = "請先登入";
-                return RedirectToAction("Login", "Account");
-            }
-
-            return View(order);
+            TempData["Error"] = "客戶無法直接取消訂單，請聯絡客服人員協助處理";
+            return RedirectToAction("Details", new { id });
         }
 
         // POST: 確認取消訂單
@@ -134,60 +103,8 @@ namespace OrderingSystemMvc.Areas.User.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ConfirmCancel(int id)
         {
-            try
-            {
-                var order = await _context.Orders
-                    .Include(o => o.Status)
-                    .FirstOrDefaultAsync(o => o.Id == id);
-
-                if (order == null)
-                {
-                    TempData["Error"] = "找不到該訂單";
-                    return RedirectToAction("Index");
-                }
-
-                // 檢查權限
-                if (User.Identity?.IsAuthenticated == true)
-                {
-                    var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                    if (order.UserId != userId)
-                    {
-                        TempData["Error"] = "您沒有權限操作此訂單";
-                        return RedirectToAction("Index");
-                    }
-                }
-
-                // 檢查是否可以取消
-                if (order.Status?.Code != "PENDING")
-                {
-                    TempData["Error"] = "此訂單已無法取消";
-                    return RedirectToAction("Details", new { id });
-                }
-
-                // 更新訂單狀態為已取消
-                var cancelledStatus = await _context.OrderStatuses
-                    .FirstOrDefaultAsync(s => s.Code == "CANCELLED");
-
-                if (cancelledStatus != null)
-                {
-                    order.OrderStatusId = cancelledStatus.Id;
-                    await _context.SaveChangesAsync();
-
-                    TempData["Success"] = "訂單已成功取消";
-                }
-                else
-                {
-                    TempData["Error"] = "系統錯誤，無法取消訂單";
-                }
-
-                return RedirectToAction("Details", new { id });
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"取消訂單錯誤: {ex.Message}");
-                TempData["Error"] = "取消訂單時發生錯誤，請稍後再試";
-                return RedirectToAction("Details", new { id });
-            }
+            TempData["Error"] = "客戶無法直接取消訂單，請聯絡客服人員協助處理";
+            return RedirectToAction("Details", new { id });
         }
 
         // GET: 訂單搜尋
@@ -279,6 +196,59 @@ namespace OrderingSystemMvc.Areas.User.Controllers
             {
                 System.Diagnostics.Debug.WriteLine($"檢查狀態錯誤: {ex.Message}");
                 return Json(new { statusChanged = false, error = "系統錯誤" });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Receipt(int id)
+        {
+            try
+            {
+                // 檢查用戶權限
+                if (!User.Identity?.IsAuthenticated == true)
+                {
+                    TempData["Error"] = "請先登入以查看收據";
+                    return RedirectToAction("Login", "Account");
+                }
+
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                // 查詢訂單（包含權限檢查）
+                var order = await _context.Orders
+                    .Include(o => o.Status)
+                    .Include(o => o.Items)
+                        .ThenInclude(i => i.MenuItem)
+                    .Include(o => o.Items)
+                        .ThenInclude(i => i.OrderOptionItems)
+                            .ThenInclude(oi => oi.OptionItem)
+                    .FirstOrDefaultAsync(o => o.Id == id && o.UserId == userId);
+
+                if (order == null)
+                {
+                    TempData["Error"] = "找不到該訂單或您沒有權限查看";
+                    return RedirectToAction("Index");
+                }
+
+                // 準備收據資料
+                var receiptData = new ReceiptViewModel
+                {
+                    Order = order,
+                    ReceiptNumber = $"R{DateTime.Now:yyyyMMdd}{id:D3}",
+                    PrintTime = DateTime.Now,
+                    StoreName = "美味點餐",
+                    StoreAddress = "台北市信義區信義路五段7號",
+                    StorePhone = "(02) 1234-5678",
+                    StoreHours = "週一至週日 10:00-22:00",
+                    CustomerName = User.Identity.Name ?? "會員"
+                };
+
+                return View(receiptData);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"生成收據時發生錯誤: {ex.Message}");
+                TempData["Error"] = "生成收據時發生錯誤";
+                return RedirectToAction("Details", new { id });
             }
         }
     }

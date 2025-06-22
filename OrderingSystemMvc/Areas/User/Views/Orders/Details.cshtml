@@ -269,17 +269,19 @@
                     <hr>
 
                     <div class="d-grid gap-2">
-                        <button class="btn btn-outline-primary" onclick="window.print()">
-                            <i class="fas fa-print me-2"></i>列印收據
-                        </button>
+                        <a asp-action="Receipt" asp-route-id="@Model.Id"
+                           class="btn btn-outline-primary"
+                           target="_blank">
+                            列印收據
+                        </a>
 
-                        @if (User.Identity?.IsAuthenticated == true && isCompleted)
+                    @*     @if (User.Identity?.IsAuthenticated == true && isCompleted)
                         {
                             <a href="#" class="btn btn-outline-success">
                                 <i class="fas fa-star me-2"></i>評價訂單
                             </a>
                         }
-
+ *@
                      
 
                         @if (currentProgress >= 4)

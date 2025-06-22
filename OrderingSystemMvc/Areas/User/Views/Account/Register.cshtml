@@ -18,14 +18,16 @@
 
                         <div class="mb-3">
                             <label asp-for="Email" class="form-label fw-semibold"></label>
-                            <input asp-for="Email" class="form-control form-control-lg" placeholder="your@email.com" />
+                            <input asp-for="Email" id="email" name="email" class="form-control form-control-lg" required placeholder="your@email.com" />
+                            <div id="email-feedback"></div>
                             <span asp-validation-for="Email" class="text-danger small"></span>
                         </div>
 
                         <div class="mb-3">
                             <label asp-for="PhoneNumber" class="form-label fw-semibold"></label>
-                            <input asp-for="PhoneNumber" class="form-control form-control-lg" placeholder="09xxxxxxxx" />
+                            <input asp-for="PhoneNumber" id="phoneNumber" name="phoneNumber" class="form-control form-control-lg" placeholder="09xxxxxxxx" />
                             <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                            <div id="phone-feedback"></div>
                         </div>
 
                         <div class="mb-3">
@@ -88,4 +90,174 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+       $(function() {
+    // 當 Email 輸入框失去焦點時進行驗證
+    $('#email').on('blur', async function() {
+        const email = $(this).val();
+                 // 簡單檢查 Email 格式
+        if (email && email.includes('@@')) {
+            // 顯示載入中提示
+            const feedbackElement = $('#email-feedback');
+            if (feedbackElement.length) {
+                feedbackElement.attr('class', 'text-info');
+                feedbackElement.text('正在檢查...');
+            }
+            
+
+            try {
+                // 發送 AJAX 請求到後端
+                const response = await fetch(`/User/Account/CheckEmailExists?email=${encodeURIComponent(email)}`);
+                const data = await response.json();
+                
+                // 根據結果更新 UI
+                if (data.exists) {
+                    // Email 已存在
+                    $(this).addClass('is-invalid').removeClass('is-valid');
+                    
+                    if (feedbackElement.length) {
+                        feedbackElement.attr('class', 'invalid-feedback');
+                        feedbackElement.text('此電子郵件已被使用');
+                    }
+                    
+                    // 使用 Toastr 顯示錯誤訊息
+                    if (typeof toastr !== 'undefined') {
+                        toastr.error('此電子郵件已被使用');
+                    }
+                } else {
+                    // Email 可用
+                    $(this).addClass('is-valid').removeClass('is-invalid');
+                    
+                    if (feedbackElement.length) {
+                        feedbackElement.attr('class', 'valid-feedback');
+                        feedbackElement.text('此電子郵件可用');
+                    }
+                }
+            } catch (error) {
+                console.error('檢查 Email 時發生錯誤:', error);
+            }
+        }
+    });
+
+        // 修正後的手機號碼驗證代碼
+        $('#phoneNumber').on('blur', async function() {
+            const phoneNumber = $(this).val();
+            if (phoneNumber && /^09\d{8}$/.test(phoneNumber)) {
+                // 顯示載入中提示
+                const feedbackElement = $('#phone-feedback');
+                if (feedbackElement.length) {
+                    feedbackElement.attr('class', 'text-info');
+                    feedbackElement.text('正在檢查...');
+                }
+
+                try {
+                    // 🔧 修正：使用 POST 方法，傳送 JSON 資料
+                    const response = await fetch('/User/Account/CheckPhoneNumberExists', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            // 🔧 如果有 CSRF Token，加入這行
+                            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        // 🔧 修正：直接傳送手機號碼字串
+                        body: JSON.stringify(phoneNumber)
+                    });
+
+                    const data = await response.json();
+
+                    // 根據結果更新 UI
+                    if (data.exists) {
+                        // 手機號碼已存在
+                        $(this).addClass('is-invalid').removeClass('is-valid');
+
+                        if (feedbackElement.length) {
+                            feedbackElement.attr('class', 'invalid-feedback');
+                            feedbackElement.text(data.message || '此手機號碼已被使用');
+                        }
+
+                        // 使用 Toastr 顯示錯誤訊息
+                        if (typeof toastr !== 'undefined') {
+                            toastr.error(data.message || '此手機號碼已被使用');
+                        }
+                    } else {
+                        // 手機號碼可用
+                        $(this).addClass('is-valid').removeClass('is-invalid');
+
+                        if (feedbackElement.length) {
+                            feedbackElement.attr('class', 'valid-feedback');
+                            feedbackElement.text(data.message || '此手機號碼可用');
+                        }
+                    }
+                } catch (error) {
+                    console.error('檢查手機號碼時發生錯誤:', error);
+
+                    // 顯示錯誤狀態
+                    $(this).removeClass('is-valid is-invalid');
+                    if (feedbackElement.length) {
+                        feedbackElement.attr('class', 'text-danger');
+                        feedbackElement.text('檢查過程中發生錯誤');
+                    }
+                }
+            } else if (phoneNumber) {
+                // 格式不正確
+                $(this).addClass('is-invalid').removeClass('is-valid');
+                const feedbackElement = $('#phone-feedback');
+                if (feedbackElement.length) {
+                    feedbackElement.attr('class', 'invalid-feedback');
+                    feedbackElement.text('手機號碼格式不正確 (請輸入09xxxxxxxx)');
+                }
+            } else {
+                // 清空時重置狀態
+                $(this).removeClass('is-valid is-invalid');
+                const feedbackElement = $('#phone-feedback');
+                if (feedbackElement.length) {
+                    feedbackElement.attr('class', '');
+                    feedbackElement.text('');
+                }
+            }
+        });
+    // 表單提交前驗證
+    $('#registerForm').on('submit', function(e) {
+        const email = $('#email').val();
+        const phoneNumber = $('#phoneNumber').val();
+        const password = $('#password').val();
+        const confirmPassword = $('#confirmPassword').val();
+        
+        let isValid = true;
+        
+        // 檢查 Email
+        if (!email || !email.includes('@@')) {
+            $('#email').addClass('is-invalid');
+            $('#email-feedback').attr('class', 'invalid-feedback').text('請輸入有效的電子郵件地址');
+            isValid = false;
+        }
+        
+        // 檢查手機號碼
+        if (!phoneNumber || !/^09\d{8}$/.test(phoneNumber)) {
+            $('#phoneNumber').addClass('is-invalid');
+            $('#phone-feedback').attr('class', 'invalid-feedback').text('請輸入有效的手機號碼');
+            isValid = false;
+        }
+        
+        // 檢查密碼
+        if (!password || password.length < 6) {
+            $('#password').addClass('is-invalid');
+            isValid = false;
+        }
+        
+        // 檢查密碼確認
+        if (password !== confirmPassword) {
+            $('#confirmPassword').addClass('is-invalid');
+            isValid = false;
+        }
+        
+        // 如果驗證失敗，阻止表單提交
+        if (!isValid) {
+            e.preventDefault();
+            toastr.error('請修正表單中的錯誤');
+        }
+    });
+});
+    </script>
+   
 }

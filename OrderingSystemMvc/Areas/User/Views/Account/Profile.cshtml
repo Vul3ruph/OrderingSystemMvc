@@ -1,4 +1,5 @@
 ﻿@model OrderingSystemMvc.ViewModels.ProfileViewModel
+
 @{
     ViewData["Title"] = "會員資料";
 }
@@ -74,7 +75,7 @@
                         <div class="card-body">
                             <i class="fas fa-shopping-cart fa-2x text-primary mb-2"></i>
                             <h6 class="card-title">總訂單數</h6>
-                            <h4 class="text-primary">0</h4>
+                            <h4 class="text-primary">@Model.TotalOrders</h4>
                             <small class="text-muted">筆訂單</small>
                         </div>
                     </div>
@@ -85,7 +86,7 @@
                         <div class="card-body">
                             <i class="fas fa-dollar-sign fa-2x text-success mb-2"></i>
                             <h6 class="card-title">消費金額</h6>
-                            <h4 class="text-success">$0</h4>
+                            <h4 class="text-success">$@Model.TotalSpent.ToString("N0")</h4>
                             <small class="text-muted">累計消費</small>
                         </div>
                     </div>
@@ -96,12 +97,56 @@
                         <div class="card-body">
                             <i class="fas fa-star fa-2x text-warning mb-2"></i>
                             <h6 class="card-title">會員等級</h6>
-                            <h4 class="text-warning">新手</h4>
+                            <h4 class="text-warning">@Model.MemberLevel</h4>
                             <small class="text-muted">會員</small>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- 如果想要顯示會員等級進度，可以加入： -->
+            @if (Model.TotalOrders > 0)
+            {
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h6 class="mb-0">
+                            <i class="fas fa-trophy me-2"></i>會員等級進度
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        @{
+                            var nextLevelSpend = GetNextLevelRequirement(Model.TotalSpent);
+                            var progress = nextLevelSpend > 0 ? (double)Model.TotalSpent / (double)nextLevelSpend * 100.0 : 100.0;
+                            if (progress > 100) progress = 100;
+                        }
+
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span>目前等級：<strong>@Model.MemberLevel</strong></span>
+                            <span>消費金額：<strong>$@Model.TotalSpent.ToString("N0")</strong></span>
+                        </div>
+
+                        <div class="progress mb-2" style="height: 10px;">
+                            <div class="progress-bar bg-warning"
+                                 role="progressbar"
+                                 style="width: @progress.ToString("F1")%">
+                            </div>
+                        </div>
+
+                        @if (progress < 100)
+                        {
+                            <small class="text-muted">
+                                再消費 $@((nextLevelSpend - Model.TotalSpent).ToString("N0")) 即可升級
+                            </small>
+                        }
+                        else
+                        {
+                            <small class="text-success">
+                                <i class="fas fa-crown me-1"></i>已達最高等級！
+                            </small>
+                        }
+                    </div>
+                </div>
+            }
 
             <!-- 快捷功能 -->
             <div class="card mt-4">
@@ -113,17 +158,17 @@
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-6">
-                            <a href="#" class="btn btn-outline-primary w-100">
+                            <a asp-controller="Orders" asp-action="Index" class="btn btn-outline-primary w-100">
                                 <i class="fas fa-history me-2"></i>查看訂單紀錄
                             </a>
                         </div>
-                        <div class="col-md-6">
+                        @* <div class="col-md-6">
                             <a href="#" class="btn btn-outline-warning w-100">
                                 <i class="fas fa-gift me-2"></i>我的優惠券
                             </a>
-                        </div>
+                        </div> *@
                         <div class="col-md-6">
-                            <a href="#" class="btn btn-outline-info w-100">
+                            <a asp-action="ChangePassword" class="btn btn-outline-info w-100">
                                 <i class="fas fa-key me-2"></i>修改密碼
                             </a>
                         </div>
@@ -141,4 +186,15 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+}
+@functions {
+    private decimal GetNextLevelRequirement(decimal currentSpent)
+    {
+        if (currentSpent < 500) return 500;      // 銅牌會員
+        if (currentSpent < 2000) return 2000;   // 銀牌會員
+        if (currentSpent < 5000) return 5000;   // 金牌會員
+        if (currentSpent < 10000) return 10000; // 鑽石會員
+        return 0; // 已達最高等級
+    }
 }

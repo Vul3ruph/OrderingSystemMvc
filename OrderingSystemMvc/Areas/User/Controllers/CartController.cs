@@ -189,7 +189,20 @@ namespace OrderingSystemMvc.Areas.User.Controllers
                     TempData["Error"] = "購物車是空的";
                     return RedirectToAction("Index");
                 }
+                // 檢查用戶是否已登入
+                if (!User.Identity?.IsAuthenticated == true)
+                    {
+                    // 儲存當前的購物車到 TempData，登入後可以恢復
+                    TempData["PendingCart"] = System.Text.Json.JsonSerializer.Serialize(cart);
 
+                    // 儲存返回的 URL，登入後直接回到結帳頁面
+                    TempData["ReturnUrl"] = Url.Action("Index", "Cart");
+
+                    // 設置提示訊息
+                    TempData["Info"] = "請先登入以完成結帳";
+
+                    return RedirectToAction("Login", "Account");
+                }
                 // 確保有預設的 OrderStatus
                 var defaultStatus = _context.OrderStatuses.FirstOrDefault(s => s.Code == "PENDING");
                 if (defaultStatus == null)
@@ -203,6 +216,7 @@ namespace OrderingSystemMvc.Areas.User.Controllers
                     _context.OrderStatuses.Add(defaultStatus);
                     _context.SaveChanges();
                 }
+                
 
                 // 取得當前用戶 ID（如果已登入）
                 string? userId = null;
@@ -260,7 +274,7 @@ namespace OrderingSystemMvc.Areas.User.Controllers
         {
             ViewBag.OrderId = orderId;
             ViewBag.IsLoggedIn = User.Identity?.IsAuthenticated ?? false;
-            return View();
+            return View(orderId);
         }
     }
 }

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using OrderingSystemMvc.Models;
 using OrderingSystemMvc.Data;
+using OrderingSystemMvc.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 
 namespace OrderingSystemMvc.Areas.Admin.Controllers
@@ -22,10 +23,18 @@ namespace OrderingSystemMvc.Areas.Admin.Controllers
         {
             var categories = await _context.Categories
                 .OrderBy(c => c.SortOrder)
-                .ThenBy(c => c.Name)
+                .Select(c => new Category
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    SortOrder = c.SortOrder,                   
+                    MenuItems = c.MenuItems // 包含 MenuItems
+                })
                 .ToListAsync();
+
             return View(categories);
         }
+
 
         // GET: Create or Edit
         public async Task<IActionResult> Upsert(int? id)
@@ -59,8 +68,13 @@ namespace OrderingSystemMvc.Areas.Admin.Controllers
                 // 新增時設定 SortOrder
                 if (category.SortOrder == 0)
                 {
+                    category.SortOrder = category.SortOrder == 0 ? 0 : category.SortOrder;
+                   
+                }
+                else
+                {
                     var maxSortOrder = await _context.Categories
-                        .MaxAsync(c => (int?)c.SortOrder) ?? 0;
+                       .MaxAsync(c => (int?)c.SortOrder) ?? 0;
                     category.SortOrder = maxSortOrder + 1;
                 }
 
@@ -69,48 +83,91 @@ namespace OrderingSystemMvc.Areas.Admin.Controllers
             }
             else
             {
-                _context.Update(category);
-                TempData["Toast"] = "✅ 分類更新成功！";
+
+                // 編輯時只更新需要的欄位
+                var existingCategory = await _context.Categories.FindAsync(category.Id);
+                if (existingCategory != null)
+                {
+                    existingCategory.Name = category.Name;
+                    existingCategory.SortOrder = category.SortOrder;
+                    // 如果有其他欄位，也在這裡更新
+
+                    _context.Categories.Update(existingCategory);
+                    TempData["Toast"] = "✅ 分類更新成功！";
+                }
+                else
+                {
+                    TempData["Toast"] = "❌ 找不到要更新的分類！";
+                    return RedirectToAction("Index");
+                }
             }
 
             await _context.SaveChangesAsync();
             return RedirectToAction("Index");
         }
+        
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateSortOrder([FromBody] List<SortOrderUpdate> updates)
+        {
+            try
+            {
+                foreach (var update in updates)
+                {
+                    var category = await _context.Categories.FindAsync(update.Id);
+                    if (category != null)
+                    {
+                        category.SortOrder = update.SortOrder;
+                    }
+                }
+                await _context.SaveChangesAsync();
+                return Json(new { success = true });
+            }
+            catch
+            {
+                return Json(new { success = false });
+            }
+        }
+
+
+
+        // 簡化你的 Delete POST 方法，直接重定向而不返回 JSON
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> Delete(int id)
         {
+            // 防止刪除系統預設分類
+            if (id == 0)
+            {
+                TempData["Toast"] = "❌ 無法刪除系統預設分類";
+                return RedirectToAction("Index");
+            }
+
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var category = await _context.Categories.FindAsync(id);
+                var category = await _context.Categories
+                    .Include(c => c.MenuItems)
+                    .FirstOrDefaultAsync(c => c.Id == id);
+
                 if (category == null)
                 {
                     TempData["Toast"] = "❌ 找不到該分類";
                     return RedirectToAction("Index");
                 }
 
-                // 先找出所有使用這個分類的商品
-                var relatedMenuItems = await _context.MenuItems
-                    .Where(m => m.CategoryId == id)
-                    .ToListAsync();
+                // 檢查是否有相關商品
+                var relatedMenuItems = category.MenuItems?.ToList() ?? new List<MenuItem>();
 
                 if (relatedMenuItems.Any())
                 {
-                    // 將這些商品的 CategoryId 設為 0 (沒有分類)
+                    // 將商品移至「未分類」(CategoryId = 0)
                     foreach (var menuItem in relatedMenuItems)
                     {
                         menuItem.CategoryId = 0;
                     }
-
                     _context.MenuItems.UpdateRange(relatedMenuItems);
-
-                    TempData["Toast"] = $"🗑️ 已成功刪除分類「{category.Name}」，{relatedMenuItems.Count} 個商品已移至「未分類」";
-                }
-                else
-                {
-                    TempData["Toast"] = $"🗑️ 已成功刪除分類「{category.Name}」";
                 }
 
                 // 刪除分類
@@ -118,14 +175,21 @@ namespace OrderingSystemMvc.Areas.Admin.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
+                // 顯示成功訊息
+                var message = relatedMenuItems.Any()
+                    ? $"✅ 已刪除分類「{category.Name}」，{relatedMenuItems.Count} 個商品已移至「未分類」"
+                    : $"✅ 已刪除分類「{category.Name}」";
+
+                TempData["Toast"] = message;
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                TempData["Toast"] = $"❌ 刪除失敗：{ex.Message}";
+                TempData["Toast"] = "❌ 刪除失敗，請稍後再試";
                 return RedirectToAction("Index");
             }
         }
+
     }
 }

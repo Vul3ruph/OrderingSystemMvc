@@ -50,12 +50,18 @@
                 <div class="nav-section">
                     <div class="nav-section-title">用戶與報表</div>
 
-                    <a href="/Admin/Customer" class="nav-link-admin @(ViewContext.RouteData.Values["controller"]?.ToString() == "Customer" ? "active" : "")">
+                    <a href="/Admin/UnderDevelopment?feature=Customer"
+                       class="nav-link-admin coming-soon"
+                       title="功能開發中，點擊查看詳情">
                         <i class="fas fa-users"></i>客戶管理
+                        <span class="badge bg-info text-white ms-auto">即將推出</span>
                     </a>
 
-                    <a href="/Admin/Report" class="nav-link-admin @(ViewContext.RouteData.Values["controller"]?.ToString() == "Report" ? "active" : "")">
+                    <a href="/Admin/UnderDevelopment?feature=Report"
+                       class="nav-link-admin coming-soon"
+                       title="功能開發中，點擊查看詳情">
                         <i class="fas fa-chart-bar"></i>報表分析
+                        <span class="badge bg-info text-white ms-auto">即將推出</span>
                     </a>
                 </div>
 
@@ -63,14 +69,21 @@
                 <div class="nav-section">
                     <div class="nav-section-title">系統設定</div>
 
-                    <a href="/Admin/Setting" class="nav-link-admin @(ViewContext.RouteData.Values["controller"]?.ToString() == "Setting" ? "active" : "")">
+                    <a href="/Admin/UnderDevelopment?feature=Setting"
+                       class="nav-link-admin coming-soon"
+                       title="功能開發中，點擊查看詳情">
                         <i class="fas fa-cog"></i>系統設定
+                        <span class="badge bg-info text-white ms-auto">即將推出</span>
                     </a>
 
-                    <a href="/Admin/AdminManagement" class="nav-link-admin @(ViewContext.RouteData.Values["controller"]?.ToString() == "AdminManagement" ? "active" : "")">
+                    <a href="/Admin/UnderDevelopment?feature=AdminManagement"
+                       class="nav-link-admin coming-soon"
+                       title="功能開發中，點擊查看詳情">
                         <i class="fas fa-user-shield"></i>管理員權限
+                        <span class="badge bg-info text-white ms-auto">即將推出</span>
                     </a>
                 </div>
+
 
                 <hr class="nav-divider">
 
