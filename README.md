@@ -13,35 +13,64 @@
 
 ### 🔸 前台（User Area）
 
-* 🔎 餐點瀏覽與分類篩選
-* ➕ 加入購物車與客製化選項
-* 🛒 購物車管理與即時價格計算
-* 📦 結帳流程（含未登入自動提醒）
-* 📜 訂單查詢與狀態追蹤
-* 📑 收據預覽與列印
-* 👤 會員註冊、登入、密碼修改、個人資料管理
+    * 🔎 餐點瀏覽與分類篩選
+    * ➕ 加入購物車與客製化選項
+    * 🛒 購物車管理與即時價格計算
+    * 📦 結帳流程（含未登入自動提醒）
+    * 📜 訂單查詢與狀態追蹤
+    * 📑 收據預覽與列印
+    * 👤 會員註冊、登入、密碼修改、個人資料管理
 
 ### 🔹 後台（Admin Area）
 
-* 📊 儀表板統計（每日／週／月／熱門餐點）
-* 📂 分類管理（排序、拖曳調整）
-* 🍱 餐點管理（CRUD、圖片上傳、複製、啟用停用）
-* 🧩 選項與加價項目管理
-* 📑 訂單後台（狀態變更、過濾、明細檢視）
-* 📈 銷售統計 API
+    * 📊 儀表板統計（每日／週／月／熱門餐點）
+    * 📂 分類管理（排序、拖曳調整）
+    * 🍱 餐點管理（CRUD、圖片上傳、複製、啟用停用）
+    * 🧩 選項與加價項目管理
+    * 📑 訂單後台（狀態變更、過濾、明細檢視）
+    * 📈 銷售統計 API
 
 ---
 
-## 🔧 使用技術
+🛠️ 技術棧
+後端技術
 
-* **ASP.NET Core MVC (.NET 6)**
-* **Entity Framework Core**（資料庫存取）
-* **SQL Server**（資料儲存）
-* **Bootstrap 5**（響應式 UI 設計）
-* **Identity**（會員與角色管理）
-* **Ajax / JSON 回傳**（前後端互動）
+    Framework: ASP.NET Core 8.0 MVC
+    
+    ORM: Entity Framework Core
+    
+    Database: SQL Server / MySQL / PostgreSQL
+    
+    Authentication: ASP.NET Core Identity
+    
+    Dependency Injection: Built-in DI Container
 
----
+前端技術
+
+    UI Framework: Bootstrap 5.3
+    
+    JavaScript: Vanilla JS + jQuery
+    
+    Icons: Font Awesome
+    
+    Charts: Chart.js (統計圖表)
+
+開發工具
+
+    IDE: Visual Studio 2022 / VS Code
+    
+    Version Control: Git
+    
+    Package Manager: NuGet
+    
+    Database Tools: SQL Server Management Studio
+
+🚀 快速開始
+環境要求
+
+    .NET 8.0 SDK
+    SQL Server 2019+ / MySQL 8.0+ / PostgreSQL 13+
+    Visual Studio 2022 或 VS Code
 
 ## 🚀 安裝與執行方式
 
